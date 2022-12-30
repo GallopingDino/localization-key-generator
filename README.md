@@ -8,7 +8,7 @@ It requires [Unity Localization](https://docs.unity3d.com/Packages/com.unity.loc
 ### Installation
 Find the manifest.json file in the Packages folder of your project and add following line to `dependencies` field:
 
-     "com.dino.localization-key-generator": "https://bitbucket.org/GallopingDino/localization-key-generator"
+     "com.dino.localization-key-generator": "https://GallopingDino@bitbucket.org/GallopingDino/localization-key-generator.git"
 
 ### Settings
 Use menu item `Window/Localization Key Generator/Settings` to create a new or focus an existing `LocalizationKeyGeneratorSettings` asset. 
