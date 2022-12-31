@@ -7,7 +7,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
         public override string ParameterName => "uuid";
         
         public override bool CanProcess(InspectorProperty property) {
-            return property.ValueEntry.WeakSmartValue is ScriptableObject;
+            return property.ValueEntry?.WeakSmartValue is ScriptableObject;
         }
         
         public override object Process(InspectorProperty property) {

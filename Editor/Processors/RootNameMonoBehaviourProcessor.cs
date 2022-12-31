@@ -7,7 +7,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
         public override string ParameterName => "rootName";
         
         public override bool CanProcess(InspectorProperty property) {
-            return property.ValueEntry.WeakSmartValue is MonoBehaviour;
+            return property.ValueEntry?.WeakSmartValue is MonoBehaviour;
         }
         
         //TODO: extract formatter logic into a separate class, make it optional

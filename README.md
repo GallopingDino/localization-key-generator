@@ -133,7 +133,7 @@ To create a new parameter processor, inherit the base `ParameterProcessor` class
 	    public override string ParameterName => "uuid";
         	    
     	public override bool CanProcess(InspectorProperty property) {  
-	    	return property.ValueEntry.WeakSmartValue is ScriptableObject;  
+	    	return property.ValueEntry?.WeakSmartValue is ScriptableObject;  
     	}
     	    
     	public override object Process(InspectorProperty property) {  
