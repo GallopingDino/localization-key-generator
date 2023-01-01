@@ -183,8 +183,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
 
                     try {
                         var formattedParameter = parameterValue is IFormattable formattable && string.IsNullOrEmpty(parameterFormat) == false
-                                                     ? formattable.ToString(parameterFormat, CultureInfo.InvariantCulture)
-                                                     : parameterValue.ToString();
+                            ? formattable.ToString(parameterFormat, CultureInfo.InvariantCulture)
+                            : parameterValue is string stringValue 
+                                ? ApplySnakeCase(stringValue) 
+                                : parameterValue.ToString();
                         str = str.Substring(0, match.Index) + formattedParameter + str.Substring(match.Index + match.Length);
                     }
                     catch {
@@ -196,6 +198,14 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
 
             result = str;
             return true;
+        }
+        
+        //TODO: extract formatter logic into a separate class, make it applicable per parameter
+        private string ApplySnakeCase(string value) {
+            return Regex.Replace(value, @"([a-z])([A-Z])", "$1_$2")
+                .ToLowerInvariant()
+                .Trim()
+                .Replace(' ', '_');
         }
 
         #endregion

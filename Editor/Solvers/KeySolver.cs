@@ -36,7 +36,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
                 if (_solver.TryFormatLine(property, format, out key) == false) {
                     return false;
                 }
-                key = ApplySnakeCase(key);
                 index++;
             } while (key != oldKey && sharedData != null && sharedData.Contains(key));
 
@@ -48,14 +47,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
                 return format;
             }
             return format + DefaultIndexParameterPostfix;
-        }
-
-        //TODO: extract formatter logic into a separate class, make it applicable per parameter
-        private string ApplySnakeCase(string value) {
-            return Regex.Replace(value, @"([a-z])([A-Z])", "$1_$2")
-                .ToLowerInvariant()
-                .Trim()
-                .Replace(' ', '_');
         }
     }
 }
