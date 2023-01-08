@@ -53,7 +53,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             return LocalizationEditorSettings.GetStringTableCollections().FirstOrDefault(c => 
                 tableReference.ReferenceType switch {
                     TableReference.Type.Name => tableReference == c.TableCollectionName,
-                    TableReference.Type.Guid => tableReference == c.SharedData.TableCollectionNameGuid
+                    TableReference.Type.Guid => tableReference == c.SharedData.TableCollectionNameGuid,
+                    _ => throw new ArgumentOutOfRangeException()
                 });
         }
 

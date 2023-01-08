@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Dino.LocalizationKeyGenerator.Editor.Settings;
@@ -20,22 +21,22 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private static string[] _tabLabels;
 
         private readonly KeySolver _keySolver;
-        private readonly TextFieldFocusController _focusController;
         private readonly InspectorProperty _property;
         private readonly AutoKeyAttribute _attribute;
         private readonly Styles _styles;
         private readonly EditorFacade _editor;
+        private readonly Dictionary<string, TextFocusHelper> _textHelpers;
 
         private ReadOnlyCollection<StringTableCollection> _tableCollections;
         private string[] _collectionLabels;
         private long _settingsVersionOnPrevKeySolverRun = -1;
         private AutoKeyUiMode _mode;
-        
+
         #region Initialization
 
         public AutoKeyUi(InspectorProperty property, AutoKeyAttribute attr, EditorFacade editor, Styles styles) {
             _keySolver = new KeySolver();
-            _focusController = new TextFieldFocusController();
+            _textHelpers = new Dictionary<string, TextFocusHelper>();
             _property = property;
             _attribute = attr;
             _editor = editor;
@@ -172,6 +173,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
             EditorGUILayout.EndHorizontal();
         }
+        
+        private bool isNextFrame;
 
         private void DrawLocale(LocaleIdentifier locale, ref SharedTableData.SharedTableEntry sharedEntry) {
             var table = _editor.GetLocalizationTable(locale);
@@ -182,16 +185,18 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
 
             EditorGUI.BeginChangeCheck();
-            _focusController.BeginCharacterSelectionSuppression();
             BeginVerticalContentSizeFitter();
 
             var textControlName = GetTextControlName(locale);
+            var focusHelper = GetTextFocusHelper(textControlName);
+            focusHelper.BeginFocusedArea();
+
             GUI.SetNextControlName(textControlName);
             var oldText = entry?.Value ?? string.Empty;
             var newText = GUILayout.TextArea(oldText, _styles.TextStyle, _styles.TextOptions);
 
+            focusHelper.EndFocusedArea();
             EndVerticalContentSizeFitter();
-            _focusController.EndCharacterSelectionSuppression();
 
             var isTextSelected = GUI.GetNameOfFocusedControl() == textControlName;
             var textRect = GUILayoutUtility.GetLastRect();
@@ -214,13 +219,22 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                     return;
                 }
 
-                sharedEntry = _editor.CreateSharedEntry(key);
                 entry = _editor.CreateLocalizationTableEntry(table, key);
             }
 
             _editor.SetLocalizationTableEntryValue(entry, newText);
-            _focusController.PreserveTextFocus(GetTextControlName(locale));
+            focusHelper.PreserveFocus();
+            
             GUIUtility.ExitGUI();
+        }
+
+        private TextFocusHelper GetTextFocusHelper(string textControlName) {
+            if (_textHelpers.TryGetValue(textControlName, out var helper)) {
+                return helper;
+            }
+            helper = new TextFocusHelper(textControlName);
+            _textHelpers[textControlName] = helper;
+            return helper;
         }
 
         private string GetTextControlName(LocaleIdentifier locale) {
@@ -232,7 +246,9 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         #region Update
 
         public void Update() {
-            _focusController.TickTextFocusController();
+            foreach (var focusController in _textHelpers.Values) {
+                focusController.Tick();
+            }
             CheckForErrors();
         }
 

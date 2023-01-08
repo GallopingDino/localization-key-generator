@@ -41,8 +41,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
             switch (mode) {
                 case AutoKeyUiMode.Auto:
-                    _autoKeyUi.DrawErrors();
-                    _autoCommentUi?.DrawErrors();
+                    if (GUI.enabled) {
+                        _autoKeyUi.DrawErrors();
+                        _autoCommentUi?.DrawErrors();
+                    }
                     _autoKeyUi.DrawKeySelector();
                     _autoCommentUi?.DrawComment();
                     _autoKeyUi.DrawText();
