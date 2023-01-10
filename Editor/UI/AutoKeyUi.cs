@@ -25,7 +25,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly AutoKeyAttribute _attribute;
         private readonly Styles _styles;
         private readonly EditorFacade _editor;
-        private readonly Dictionary<string, TextFocusHelper> _textHelpers;
 
         private ReadOnlyCollection<StringTableCollection> _tableCollections;
         private string[] _collectionLabels;
@@ -36,7 +35,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         public AutoKeyUi(InspectorProperty property, AutoKeyAttribute attr, EditorFacade editor, Styles styles) {
             _keySolver = new KeySolver();
-            _textHelpers = new Dictionary<string, TextFocusHelper>();
             _property = property;
             _attribute = attr;
             _editor = editor;
@@ -157,24 +155,28 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 }
             }
 
-            if (hasEntry && GUILayout.Button(new GUIContent("○", "Set reference empty"), _styles.SquareContentOptions)) {
-                _editor.SetSharedEntryReferenceEmpty();
-                GUIUtility.hotControl = 0;
-                GUIUtility.keyboardControl = 0;
-                GUIUtility.ExitGUI();
-            }
+            if (hasEntry) {
+                if (GUILayout.Button(new GUIContent("○", "Set reference empty"), _styles.SquareContentOptions)) {
+                    _editor.SetSharedEntryReferenceEmpty();
+                    GUIUtility.hotControl = 0;
+                    GUIUtility.keyboardControl = 0;
+                    GUIUtility.ExitGUI();
+                }
 
-            if (hasEntry && GUILayout.Button(new GUIContent("✕", "Remove table entry"), _styles.SquareContentOptions)) {
-                _editor.RemoveSharedEntry();
-                GUIUtility.hotControl = 0;
-                GUIUtility.keyboardControl = 0;
-                GUIUtility.ExitGUI();
+                if (GUILayout.Button(new GUIContent("✕", "Remove table entry"), _styles.SquareContentOptions)) {
+                    _editor.RemoveSharedEntry();
+                    GUIUtility.hotControl = 0;
+                    GUIUtility.keyboardControl = 0;
+                    GUIUtility.ExitGUI();
+                }
+            }
+            else {
+                SkipButtonControl();
+                SkipButtonControl();
             }
 
             EditorGUILayout.EndHorizontal();
         }
-        
-        private bool isNextFrame;
 
         private void DrawLocale(LocaleIdentifier locale, ref SharedTableData.SharedTableEntry sharedEntry) {
             var table = _editor.GetLocalizationTable(locale);
@@ -188,14 +190,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             BeginVerticalContentSizeFitter();
 
             var textControlName = GetTextControlName(locale);
-            var focusHelper = GetTextFocusHelper(textControlName);
-            focusHelper.BeginFocusedArea();
-
             GUI.SetNextControlName(textControlName);
             var oldText = entry?.Value ?? string.Empty;
             var newText = GUILayout.TextArea(oldText, _styles.TextStyle, _styles.TextOptions);
 
-            focusHelper.EndFocusedArea();
             EndVerticalContentSizeFitter();
 
             var isTextSelected = GUI.GetNameOfFocusedControl() == textControlName;
@@ -223,18 +221,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
 
             _editor.SetLocalizationTableEntryValue(entry, newText);
-            focusHelper.PreserveFocus();
             
             GUIUtility.ExitGUI();
-        }
-
-        private TextFocusHelper GetTextFocusHelper(string textControlName) {
-            if (_textHelpers.TryGetValue(textControlName, out var helper)) {
-                return helper;
-            }
-            helper = new TextFocusHelper(textControlName);
-            _textHelpers[textControlName] = helper;
-            return helper;
         }
 
         private string GetTextControlName(LocaleIdentifier locale) {
@@ -246,9 +234,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         #region Update
 
         public void Update() {
-            foreach (var focusController in _textHelpers.Values) {
-                focusController.Tick();
-            }
             CheckForErrors();
         }
 
@@ -277,6 +262,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         #endregion
 
         #region Layout
+
+        private void SkipButtonControl() {
+            GUI.Button(new Rect(), GUIContent.none);
+        }
 
         private void BeginIndentedGroup() {
             SirenixEditorGUI.BeginIndentedVertical();
