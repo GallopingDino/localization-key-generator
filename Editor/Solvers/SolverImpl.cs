@@ -119,7 +119,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
                 var propertyClassAttributes = property.ValueEntry.TypeOfValue.GetAttributes<AutoKeyParamsAttribute>();
                 propertyAttributes = propertyAttributes.Except(propertyClassAttributes);
             }
-            if (property.ParentType != null) {
+            if (property.Parent != null && property.ParentType != null) {
                 var parentClassAttributes = property.ParentType.GetAttributes<AutoKeyParamsAttribute>();
                 propertyAttributes = propertyAttributes.Concat(parentClassAttributes);
             }
@@ -161,7 +161,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
 
         #region Format tools
 
-        //TODO: looks like the same params are being processed twice on CollectParameters step: for child and parent properties
         public bool TryFormatLine(InspectorProperty property, string str, out string result) {
             result = null;
 

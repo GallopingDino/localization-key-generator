@@ -8,14 +8,14 @@ using UnityEngine.Localization.Settings;
 namespace Dino.LocalizationKeyGenerator.Editor.Settings {
     internal class LocalizationKeyGeneratorSettings : ScriptableObject {
         [SerializeField] private LocaleIdentifier[] _previewLocales = Array.Empty<LocaleIdentifier>();
-        [SerializeField] private StringDictionaryContainer _parameters = new StringDictionaryContainer();
         [SerializeField] private string _defaultKeyStringFormat = "aa_bb";
         [SerializeField] private string _defaultCommentStringFormat = string.Empty;
-        
+        [SerializeField] private StringDictionaryContainer _parameters = new StringDictionaryContainer();
+
         public IReadOnlyList<LocaleIdentifier> PreviewLocales => _previewLocales;
-        public IReadOnlyDictionary<string, string> Parameters => _parameters.Dictionary;
         public string DefaultKeyStringFormat => _defaultKeyStringFormat;
         public string DefaultCommentStringFormat => _defaultCommentStringFormat;
+        public IReadOnlyDictionary<string, string> Parameters => _parameters.Dictionary;
         
         public long Version { get; private set; }
         
