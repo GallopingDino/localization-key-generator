@@ -6,10 +6,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Dino.LocalizationKeyGenerator.Editor.Processors;
 using Dino.LocalizationKeyGenerator.Editor.Settings;
+using Dino.LocalizationKeyGenerator.Editor.Utility;
 using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector.Editor.ValueResolvers;
 using Sirenix.Utilities;
 using UnityEditor;
+using RH = Dino.LocalizationKeyGenerator.Editor.Utility.RegexHelper;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
     internal class SolverImpl {
@@ -19,8 +21,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         private readonly List<ParameterProcessor> _parameterProcessors = new List<ParameterProcessor>();
         private readonly Dictionary<string, object> _parameters = new Dictionary<string, object>();
         private readonly Stack<InspectorProperty> _propertyHierarchy = new Stack<InspectorProperty>();
-        private readonly Regex _parameterFilter = new Regex(@"\{\s*(@?[\w\d\+\-\*\%\(\)\.\s]+)\s*\:?\s*(\w\d)?\s*\}");
+        private readonly TextFormatter _textFormatter = new TextFormatter();
+        private static string _parameterParserPattern;
         
+        public string DefaultStringFormat { get; set; }
         public IDictionary<string, object> Parameters => _parameters;
 
         #region Parameters processing
@@ -167,7 +171,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             }
 
             var depth = 0;
-            while (_parameterFilter.Matches(str, 0) is var parsedParameters && parsedParameters.Count > 0) {
+            var parameterParserPattern = BuildParameterParserPattern();
+            while (Regex.Matches(str, parameterParserPattern, 0) is var parsedParameters && parsedParameters.Count > 0) {
                 if (depth++ > MaxAnalysisDepth) {
                     SetError(GenerateAnalysisDepthExceeded(str));
                     break;
@@ -180,13 +185,23 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
                         SetError(GenerateParameterNotFoundError(parameterName));
                         return false;
                     }
-
+                    
                     try {
-                        var formattedParameter = parameterValue is IFormattable formattable && string.IsNullOrEmpty(parameterFormat) == false
-                            ? formattable.ToString(parameterFormat, CultureInfo.InvariantCulture)
-                            : parameterValue is string stringValue 
-                                ? ApplySnakeCase(stringValue) 
-                                : parameterValue.ToString();
+                        string formattedParameter;
+                        switch (parameterValue) {
+                            case var _ when _textFormatter.CanFormat(parameterValue.GetType()):
+                                if (string.IsNullOrEmpty(parameterFormat)) parameterFormat = DefaultStringFormat;
+                                formattedParameter = _textFormatter.Format(parameterValue, parameterFormat);
+                                break;
+                            case IFormattable formattableValue:
+                                formattedParameter = formattableValue.ToString(parameterFormat, CultureInfo.InvariantCulture);
+                                break;
+                            case var _ when string.IsNullOrEmpty(parameterFormat):
+                                formattedParameter = parameterValue.ToString();
+                                break;
+                            default:
+                                throw new FormatException();
+                        }
                         str = str.Substring(0, match.Index) + formattedParameter + str.Substring(match.Index + match.Length);
                     }
                     catch {
@@ -199,13 +214,15 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             result = str;
             return true;
         }
-        
-        //TODO: extract formatter logic into a separate class, make it applicable per parameter
-        private string ApplySnakeCase(string value) {
-            return Regex.Replace(value, @"([a-z])([A-Z])", "$1_$2")
-                .ToLowerInvariant()
-                .Trim()
-                .Replace(' ', '_');
+
+        private static string BuildParameterParserPattern() {
+            if (string.IsNullOrEmpty(_parameterParserPattern) == false) {
+                return _parameterParserPattern;
+            }
+            var parameterNamePattern = $@"@?{RH.AnyOf(RH.Letter, RH.Digit, RH.Space, @"_\+\-\*\%\(\)\.")}+";
+            var formatPattern = $@"{RH.Not(Regex.Escape("}"))}+";
+            _parameterParserPattern = $@"\{{{RH.Space}*({parameterNamePattern}){RH.Space}*\:?{RH.Space}*({formatPattern})?{RH.Space}*\}}";
+            return _parameterParserPattern;
         }
 
         #endregion

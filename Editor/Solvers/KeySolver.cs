@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Dino.LocalizationKeyGenerator.Editor.Settings;
 using Sirenix.OdinInspector.Editor;
 using UnityEngine.Localization.Tables;
 
@@ -9,6 +10,15 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         
         private readonly SolverImpl _solver = new SolverImpl();
         private readonly Regex _indexParameterFilter = new Regex(@"\{\s*index[\s\:\}]");
+
+        public KeySolver() {
+            UpdateSolverSettings();
+            LocalizationKeyGeneratorSettings.Instance.Changed += UpdateSolverSettings;
+        }
+
+        private void UpdateSolverSettings() {
+            _solver.DefaultStringFormat = LocalizationKeyGeneratorSettings.Instance.DefaultKeyStringFormat;
+        }
 
         public bool TryCreateKey(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
             key = null;

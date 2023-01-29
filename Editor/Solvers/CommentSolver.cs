@@ -1,8 +1,18 @@
+using Dino.LocalizationKeyGenerator.Editor.Settings;
 using Sirenix.OdinInspector.Editor;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
     internal class CommentSolver {
         private readonly SolverImpl _solver = new SolverImpl();
+
+        public CommentSolver() {
+            UpdateSolverSettings();
+            LocalizationKeyGeneratorSettings.Instance.Changed += UpdateSolverSettings;
+        }
+
+        private void UpdateSolverSettings() {
+            _solver.DefaultStringFormat = LocalizationKeyGeneratorSettings.Instance.DefaultCommentStringFormat;
+        }
         
         public bool TryCreateComment(InspectorProperty property, string format, out string comment) {
             comment = null;
