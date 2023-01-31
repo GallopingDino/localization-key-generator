@@ -150,7 +150,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             _undo.RegisterSelfChanges("Remove key");
             var collection = GetTableCollection();
             _undo.RegisterCollectionChanges(collection, "Remove key");
-            collection.RemoveEntry(_localizedString.TableEntryReference.KeyId);
+            collection.RemoveEntry(_localizedString.TableEntryReference);
             _localizedString.TableEntryReference = default;
             RaiseTableEntryRemovedEvent();
         }
