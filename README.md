@@ -1,4 +1,5 @@
 
+
 Localization Key Generator
 ===
 This package provides a set of attributes to generate localization keys and comments from code.
@@ -22,6 +23,7 @@ You can also add project-wide parameters into `Parameters` array.
 
 Use `AutoKeyAttribute` on a LocalizedString field or a collection of LocalizedStrings and provide a key [format string](#markdown-header-format).
 
+```c#
     public class InventoryItem : ScriptableObject {
 	    public ItemType Type;
 	    [AutoKey("{Type}/{rootName}/name")]
@@ -29,6 +31,7 @@ Use `AutoKeyAttribute` on a LocalizedString field or a collection of LocalizedSt
 	    [AutoKey("{Type}/{rootName}/desc")]
 	    public LocalizedString Description;
     }
+```
 
 ![](/Documentation~/images/AutoKey.png)
 
@@ -39,8 +42,11 @@ Press `Regenerate` to change key for the current entry. Press `✕` to remove cu
 If a generated key matches an existing key, it will be appended with an index, e. g. `weapon/tommy_gun/name-1`. The index position can be specified in the key format string. This ensures that even the first generated key will have a 0 index appended.
 
 
+
+```c#
     [AutoKey("{Type}/{rootName}/name-{index}")]
     public LocalizedString Name;
+```
 
 ###  Generating comments
 
@@ -49,7 +55,7 @@ Unity Localization library allows [adding metadata](https://docs.unity3d.com/Pac
 You can generate comments from code using `AutoCommentAttribute`:
 
 
-
+```c#
     public class Dialog : ScriptableObject {
 	    public List<Line> Lines;
       
@@ -61,6 +67,7 @@ You can generate comments from code using `AutoCommentAttribute`:
 		    public LocalizedString Text;
 	    }
     }
+```
 
 ![](/Documentation~/images/AutoComment.png)
 
@@ -75,6 +82,8 @@ A format string can contain both simple text pieces and resolvable strings enclo
  
  Resolvable strings can be nested. For example, if you want your key index to start from 1, you can use `index` parameter inside of expression: 
 
+
+```c#
     public class Dialog : ScriptableObject {
 	    public List<Line> Lines;
       
@@ -86,7 +95,7 @@ A format string can contain both simple text pieces and resolvable strings enclo
 		    public LocalizedString Text;
 	    }
     }
-    
+``` 
 
 ###  Passing parameters
 
@@ -102,7 +111,8 @@ There are three types of parameters you might use in your format strings:
 
 To introduce custom parameters use `AutoKeyParamsAttribute`. This attribute can be applied to a field limiting this parameter's scope to this field and any nested `LocalizedStrings` in the object graph. Alternatively it can be applied to the whole class making this parameter accessible from any `LocalizedString` field in this class or any nested fields. Provide parameter name and a format string that will be resolved to parameter value.
 
-      
+
+```c#    
 	[AutoKeyParams("type", "Type")]
     public class InventoryItem : ScriptableObject {
        	public ItemType Type;
@@ -116,6 +126,7 @@ To introduce custom parameters use `AutoKeyParamsAttribute`. This attribute can 
        	[AutoKey("{type}/{rootName}/level-{listIndex}/desc")]
        	public LocalizedString Description;  
     }
+```
    
    ![](/Documentation~/images/AutoKeyParams.png)
 
@@ -129,6 +140,8 @@ Every time the format string is being resolved, all suitable parameter processor
 
 To create a new parameter processor, inherit the base `ParameterProcessor` class. You can use one of the built-in processors such as `RootNameScriptableObjectProcessor`, `UuidScriptableObjectProcessor` and `ListIndexProcessor` as a reference:
 
+
+```c#
     internal sealed class UuidScriptableObjectProcessor : ParameterProcessor {  
 	    public override string ParameterName => "uuid";
         	    
@@ -144,25 +157,33 @@ To create a new parameter processor, inherit the base `ParameterProcessor` class
 			return string.Empty;
 		}  
     }
+```
 
 ### Resolvable string formatting
 
 You can use interpolated strings-like syntax to provide string format for resolvable strings. For example you can use [standard numeric format](https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings) to set minimum number of digits for the listIndex parameter:
 
+
+```c#
     [AutoKey("{type}/{rootName}/level-{listIndex:D2}/name")]
-    public LocalizedString Name; 
+    public LocalizedString Name;
+```
 
 ### Case style formatting
 In addition to [standard format strings](https://learn.microsoft.com/en-us/dotnet/standard/base-types/formatting-types#standard-format-strings)  you can use special formats to specify case style for resolvable strings that resolve to string or enum values.
-| Case | Format |
-|--|--|
-| camelCase | aaBb |
-| PascalCase | AaBb |
-| kebab-case | aa-bb |
-| SCREAMING_SNAKE | AA_BB |
-| UNALTERED_Case | \*_* |
+
+| Case            | Format                     |
+| --------------- | -------------------------- |
+| camelCase       | aaBb                       |
+| PascalCase      | AaBb                       |
+| kebab-case      | aa-bb                      |
+| SCREAMING_SNAKE | AA_BB                      |
+| UNALTERED_Case  | \*_*                       |
+
 You can create your own custom case style using combinations of lower and capital letters with `*` character to keep original case intact and various separator characters. 
 
+
+```c#
 	[AutoKeyParams("type", "Type")]
     public class InventoryItem : ScriptableObject {
        	public ItemType Type;
@@ -176,6 +197,7 @@ You can create your own custom case style using combinations of lower and capita
        	[AutoKey("{type:aa_bb}/{rootName:aa_bb}/level-{@{listIndex} + 1:D2}/desc")]
        	public LocalizedString Description;
     }
+```
    
    ![](/Documentation~/images/CaseStyle.png)
    
