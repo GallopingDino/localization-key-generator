@@ -70,6 +70,11 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             return sharedData.GetEntryFromReference(_localizedString.TableEntryReference);
         }
 
+        public bool IsLocalizationTableAvailable(LocaleIdentifier locale) {
+            var tableCollection = GetTableCollection();
+            return tableCollection != null && tableCollection.GetTable(locale) != null;
+        }
+
         public StringTable GetLocalizationTable(LocaleIdentifier locale) {
             var tableCollection = GetTableCollection();
             if (tableCollection == null) return null;

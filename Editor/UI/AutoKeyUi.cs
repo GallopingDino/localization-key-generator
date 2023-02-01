@@ -93,7 +93,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             var sharedEntry = _editor.GetSharedEntry();
             
             foreach (var locale in LocalizationKeyGeneratorSettings.Instance.PreviewLocales) {
-                if (locale == default) {
+                if (locale == default || _editor.IsLocalizationTableAvailable(locale) == false) {
                     continue;
                 }
                 
