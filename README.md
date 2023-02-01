@@ -36,10 +36,10 @@ In the inspector window you will see a simplified drawer for your LocalizedStrin
 
 Press `Regenerate` to change key for the current entry. Press `✕` to remove current entry from the table or `◯` to set entry reference empty without removing current entry from the table.
 
-If a generated key matches an existing key, it will be appended with an index, e. g. `weapon/tommy_gun/name-1`. You can specify position and format of the index in the key format string:
+If a generated key matches an existing key, it will be appended with an index, e. g. `weapon/tommy_gun/name-1`. The index position can be specified in the key format string. This ensures that even the first generated key will have a 0 index appended.
 
 
-    [AutoKey("{Type}/{rootName}/name-{index:D2}")]
+    [AutoKey("{Type}/{rootName}/name-{index}")]
     public LocalizedString Name;
 
 ###  Generating comments
@@ -111,9 +111,9 @@ To introduce custom parameters use `AutoKeyParamsAttribute`. This attribute can 
         
     [Serializable]
     public class ItemLevel {
-       	[AutoKey("{type}/{rootName}/level-{listIndex:D2}/name")]
+       	[AutoKey("{type}/{rootName}/level-{listIndex}/name")]
        	public LocalizedString Name;  
-       	[AutoKey("{type}/{rootName}/level-{listIndex:D2}/desc")]
+       	[AutoKey("{type}/{rootName}/level-{listIndex}/desc")]
        	public LocalizedString Description;  
     }
    
@@ -121,7 +121,7 @@ To introduce custom parameters use `AutoKeyParamsAttribute`. This attribute can 
 
 ### Parameter processors
 
-Sometimes you might want to declare custom parameters in the code you don't have access to. Or you might want some of your classes and assemblies to not depend on Localization Key Generator assembly, but still be able to provide custom parameters. Or you might need to access `SerializedProperty` data in your parameters. In those cases parameter processors could come to the rescue.
+Sometimes you might want to declare custom parameters in the code you don't have access to. Or you might want some of your classes and assemblies to not depend on Localization Key Generator assembly, but still be able to provide custom parameters. Or you might need to access `SerializedProperty` data in your parameters. In these cases parameter processors will come to the rescue.
 
 Parameter processors are used to declare custom parameters based on `InspectorProperties`, which are Odin's more powerful equivalent to `SerializedProperty`. 
 
@@ -144,6 +144,42 @@ To create a new parameter processor, inherit the base `ParameterProcessor` class
 			return string.Empty;
 		}  
     }
+
+### Resolvable string formatting
+
+You can use interpolated strings-like syntax to provide string format for resolvable strings. For example you can use [standard numeric format](https://learn.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings) to set minimum number of digits for the listIndex parameter:
+
+    [AutoKey("{type}/{rootName}/level-{listIndex:D2}/name")]
+    public LocalizedString Name; 
+
+### Case style formatting
+In addition to [standard format strings](https://learn.microsoft.com/en-us/dotnet/standard/base-types/formatting-types#standard-format-strings)  you can use special formats to specify case style for resolvable strings that resolve to string or enum values.
+| Case | Format |
+|--|--|
+| camelCase | aaBb |
+| PascalCase | AaBb |
+| kebab-case | aa-bb |
+| SCREAMING_SNAKE | AA_BB |
+| UNALTERED_Case | \*_* |
+You can create your own custom case style using combinations of lower and capital letters with `*` character to keep original case intact and various separator characters. 
+
+	[AutoKeyParams("type", "Type")]
+    public class InventoryItem : ScriptableObject {
+       	public ItemType Type;
+       	public ItemLevel[] Levels;
+    }
+        
+    [Serializable]
+    public class ItemLevel {
+       	[AutoKey("{type:aa_bb}/{rootName:aa_bb}/level-{@{listIndex} + 1:D2}/name")]
+       	public LocalizedString Name;  
+       	[AutoKey("{type:aa_bb}/{rootName:aa_bb}/level-{@{listIndex} + 1:D2}/desc")]
+       	public LocalizedString Description;
+    }
+   
+   ![](/Documentation~/images/CaseStyle.png)
+   
+You can achieve the same result by setting default case style format in `LocalizationKeyGeneratorSettings` using `Default Key / Comment String Format` fields. If by default you prefer to keep original case style, set these fields empty.
 
 ## Author
 Vladimir Kuznetsov, a game developer.
