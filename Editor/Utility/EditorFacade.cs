@@ -104,7 +104,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             _undo.RegisterSharedDataChanges(sharedData, "Create entry");
             
             var newEntry = sharedData.AddKey(key);
-            _localizedString.TableEntryReference = (TableEntryReference) key;
+            _localizedString.TableEntryReference = (TableEntryReference) newEntry.Id;
             RaiseTableEntryAddedEvent(newEntry);
             return newEntry;
         }
@@ -147,7 +147,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
                default:
                    return;
             }
-           _localizedString.TableEntryReference = (TableEntryReference) key;
+           _localizedString.TableEntryReference = (TableEntryReference) sharedEntry.Id;
             RaiseTableEntryModifiedEvent(sharedEntry);
         }
 
