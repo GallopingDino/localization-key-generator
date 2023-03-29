@@ -77,16 +77,24 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
 
         public StringTable GetLocalizationTable(LocaleIdentifier locale) {
             var tableCollection = GetTableCollection();
-            if (tableCollection == null) return null;
+            if (tableCollection == null) {
+                return null;
+            }
             return (tableCollection.GetTable(locale) ?? tableCollection.Tables.FirstOrDefault().asset) as StringTable;
         }
 
         public StringTableEntry GetLocalizationTableEntry(StringTable table) {
-            if (table == null || _localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
+            if (table == null) {
                 return null;
             }
+            return GetLocalizationTableEntryByReference(table, _localizedString.TableEntryReference);
+        }
 
-            return table.GetEntryFromReference(_localizedString.TableEntryReference);
+        private StringTableEntry GetLocalizationTableEntryByReference(StringTable table, TableEntryReference entryReference) {
+            if (_localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
+                return null;
+            }
+            return table.GetEntryFromReference(entryReference);
         }
 
         public SharedTableData.SharedTableEntry CreateSharedEntry(string key) {
@@ -107,6 +115,33 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             _localizedString.TableEntryReference = (TableEntryReference) newEntry.Id;
             RaiseTableEntryAddedEvent(newEntry);
             return newEntry;
+        }
+
+        public void CopySharedEntryValuesFrom(SharedTableData.SharedTableEntry from) {
+            if (from == null) {
+                return;
+            }
+
+            var sharedEntry = GetSharedEntry();
+            if (sharedEntry == null) {
+                return;
+            }
+            
+            var sourceReference = from.Id != 0 ? (TableEntryReference) from.Id : (TableEntryReference) from.Key;
+            var tableCollection = GetTableCollection();
+            if (tableCollection == null) {
+                return;
+            }
+            
+            foreach (var table in tableCollection.StringTables) {
+                var sourceEntry = GetLocalizationTableEntryByReference(table, sourceReference);
+                if (sourceEntry == null) {
+                    continue;
+                }
+                
+                var tableEntry = CreateLocalizationTableEntry(table, sharedEntry.Key);
+                SetLocalizationTableEntryValue(tableEntry, sourceEntry.Value);
+            }
         }
 
         public StringTableEntry CreateLocalizationTableEntry(StringTable table, string key) {

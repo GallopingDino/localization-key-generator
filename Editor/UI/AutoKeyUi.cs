@@ -156,6 +156,17 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
 
             if (hasEntry) {
+                if (GUILayout.Button(new GUIContent("❐", "Duplicate table entry"), _styles.SquareContentOptions)) {
+                    if (TryCreateLocalizationKey(sharedData, _attribute.Format, sharedEntry.Key, out var key)) {
+                        _editor.CreateSharedEntry(key);
+                        _editor.CopySharedEntryValuesFrom(sharedEntry);
+                    }
+                    
+                    GUIUtility.hotControl = 0;
+                    GUIUtility.keyboardControl = 0;
+                    GUIUtility.ExitGUI();
+                }
+                
                 if (GUILayout.Button(new GUIContent("○", "Set reference empty"), _styles.SquareContentOptions)) {
                     _editor.SetSharedEntryReferenceEmpty();
                     GUIUtility.hotControl = 0;
