@@ -184,6 +184,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             else {
                 SkipButtonControl();
                 SkipButtonControl();
+                SkipButtonControl();
             }
 
             EditorGUILayout.EndHorizontal();
