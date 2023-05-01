@@ -44,7 +44,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         private void InitializeModeTabs() {
-            _tabLabels ??= Enum.GetNames(typeof(AutoKeyUiMode));
+            _tabLabels = _tabLabels ?? Enum.GetNames(typeof(AutoKeyUiMode));
             _mode = _attribute.IsDefaultTabAuto ? AutoKeyUiMode.Auto : AutoKeyUiMode.Manual;
         }
 

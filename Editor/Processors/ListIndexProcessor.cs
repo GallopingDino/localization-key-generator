@@ -5,7 +5,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
         public override string ParameterName => "listIndex";
         
         public override bool CanProcess(InspectorProperty property) {
-            return property.Parent is { ChildResolver: ICollectionResolver _ };
+            return property.Parent?.ChildResolver is ICollectionResolver;
         }
 
         public override object Process(InspectorProperty property) {

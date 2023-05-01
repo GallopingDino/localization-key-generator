@@ -27,20 +27,20 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         private void InitializeStyles() {
-            ButtonStyle ??= new GUIStyle(EditorStyles.miniButton) {
+            ButtonStyle = new GUIStyle(EditorStyles.miniButton) {
                 font = EditorStyles.miniFont, 
                 richText = true
             };
 
-            ErrorStyle ??= new GUIStyle(EditorStyles.helpBox) {
+            ErrorStyle = new GUIStyle(EditorStyles.helpBox) {
                 richText = true
             };
             
-            LabelStyle ??= new GUIStyle(EditorStyles.label) {
+            LabelStyle = new GUIStyle(EditorStyles.label) {
                 alignment = TextAnchor.MiddleLeft
             };
             
-            TextStyle ??= new GUIStyle(EditorStyles.textArea) {
+            TextStyle = new GUIStyle(EditorStyles.textArea) {
                 wordWrap = true,
                 padding = {
                     right = 20
@@ -68,27 +68,27 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             var iconsType = Assembly.Load("Unity.Localization.Editor")?.GetType("UnityEditor.Localization.EditorIcons");
             
             // Depends on localization package version
-            EditTableButton ??= iconsType?.GetProperty("StringTable", BindingFlags.Static | BindingFlags.Public)?
+            EditTableButton = iconsType?.GetProperty("StringTable", BindingFlags.Static | BindingFlags.Public)?
                                     .GetValue(null) as GUIContent;
             
-            EditTableButton ??= new GUIContent(iconsType?.GetProperty("TableWindow", BindingFlags.Static | BindingFlags.Public)?
+            EditTableButton = EditTableButton ?? new GUIContent(iconsType?.GetProperty("TableWindow", BindingFlags.Static | BindingFlags.Public)?
                               .GetValue(null) as Texture, "Open table");
             
-            EditTableButton ??= new GUIContent("T", "Open table");
+            EditTableButton = EditTableButton ?? new GUIContent("T", "Open table");
 
-            WarningIcon ??= typeof(EditorGUIUtility)
+            WarningIcon = typeof(EditorGUIUtility)
                                 .GetMethod("GetHelpIcon", BindingFlags.NonPublic | BindingFlags.Static)?
                                 .Invoke(null, new object[] { MessageType.Warning }) as Texture;
         }
 
         private void InitializeLayoutOptions() {
             const float SquareButtonWidth = 30;
-            LabelOptions ??= new[] { GUILayout.Width(100), GUILayout.ExpandWidth(true) };
-            TextOptions ??= new[] { GUILayout.ExpandHeight(true), GUILayout.MaxHeight(200) };            
-            ContentSizeFitterOptions ??= new [] { GUILayout.MinHeight(10) };
+            LabelOptions = new[] { GUILayout.Width(100), GUILayout.ExpandWidth(true) };
+            TextOptions = new[] { GUILayout.ExpandHeight(true), GUILayout.MaxHeight(200) };            
+            ContentSizeFitterOptions = new [] { GUILayout.MinHeight(10) };
 
-            FlexibleContentOptions ??= new[] { GUILayout.ExpandWidth(true), GUILayout.MaxWidth(int.MaxValue), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
-            SquareContentOptions ??= new[] { GUILayout.Width(SquareButtonWidth), GUILayout.ExpandWidth(false), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
+            FlexibleContentOptions = new[] { GUILayout.ExpandWidth(true), GUILayout.MaxWidth(int.MaxValue), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
+            SquareContentOptions = new[] { GUILayout.Width(SquareButtonWidth), GUILayout.ExpandWidth(false), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
         }
         
         #endregion
