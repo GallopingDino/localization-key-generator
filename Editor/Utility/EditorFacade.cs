@@ -16,13 +16,13 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
         public event Action EntryModified;
         public event Action EntryRemoved;
 
-        private readonly LocalizedString _localizedString;
+        private readonly InspectorProperty _property;
         private readonly Undo _undo;
 
         #region Initialization
 
         public EditorFacade(InspectorProperty property) {
-            _localizedString = property.ValueEntry.WeakSmartValue as LocalizedString;
+            _property = property;
             _undo = new Undo(property);
             InitializeSystemEvents();
         }
@@ -47,27 +47,34 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
         
         #region Public API
 
-        public StringTableCollection GetTableCollection() {
-            var tableReference = _localizedString.TableReference;
-            if (tableReference.ReferenceType == TableReference.Type.Empty) return null;
-            return LocalizationEditorSettings.GetStringTableCollections().FirstOrDefault(c => 
-                tableReference.ReferenceType switch {
-                    TableReference.Type.Name => tableReference == c.TableCollectionName,
-                    TableReference.Type.Guid => tableReference == c.SharedData.TableCollectionNameGuid,
-                    _ => throw new ArgumentOutOfRangeException()
-                });
+        public LocalizedString GetLocalizedString() {
+            return (LocalizedString) _property.ValueEntry.WeakSmartValue;
         }
+
+        public StringTableCollection GetTableCollection() {
+            var localizedString = GetLocalizedString();
+            var tableReference = localizedString.TableReference;
+            if (tableReference.ReferenceType == TableReference.Type.Empty) return null;
+            return LocalizationEditorSettings.GetStringTableCollections().FirstOrDefault(c => {
+                switch (tableReference.ReferenceType) {
+                    case TableReference.Type.Name: return tableReference == c.TableCollectionName;
+                    case TableReference.Type.Guid: return tableReference == c.SharedData.TableCollectionNameGuid;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            });
+    }
 
         public SharedTableData GetSharedData() {
             return GetTableCollection()?.SharedData;
         }
 
         public SharedTableData.SharedTableEntry GetSharedEntry() {
+            var localizedString = GetLocalizedString();
             var sharedData = GetSharedData();
-            if (sharedData == null || _localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
+            if (sharedData == null || localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
                 return null;
             }
-            return sharedData.GetEntryFromReference(_localizedString.TableEntryReference);
+            return sharedData.GetEntryFromReference(localizedString.TableEntryReference);
         }
 
         public bool IsLocalizationTableAvailable(LocaleIdentifier locale) {
@@ -87,11 +94,13 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             if (table == null) {
                 return null;
             }
-            return GetLocalizationTableEntryByReference(table, _localizedString.TableEntryReference);
+            var localizedString = GetLocalizedString();
+            return GetLocalizationTableEntryByReference(table, localizedString.TableEntryReference);
         }
 
         private StringTableEntry GetLocalizationTableEntryByReference(StringTable table, TableEntryReference entryReference) {
-            if (_localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
+            var localizedString = GetLocalizedString();
+            if (localizedString.TableEntryReference.ReferenceType == TableEntryReference.Type.Empty) {
                 return null;
             }
             return table.GetEntryFromReference(entryReference);
@@ -112,7 +121,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             _undo.RegisterSharedDataChanges(sharedData, "Create entry");
             
             var newEntry = sharedData.AddKey(key);
-            _localizedString.TableEntryReference = (TableEntryReference) newEntry.Id;
+            var localizedString = GetLocalizedString();
+            localizedString.TableEntryReference = (TableEntryReference) newEntry.Id;
             RaiseTableEntryAddedEvent(newEntry);
             return newEntry;
         }
@@ -168,41 +178,45 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
         }
 
         public void RenameSharedEntry(string key) {
+            var localizedString = GetLocalizedString();
             var sharedData = GetSharedData();
             var sharedEntry = GetSharedEntry();
             _undo.RegisterSelfChanges("Rename entry");
             _undo.RegisterSharedDataChanges(sharedData, "Rename entry");
-            switch (_localizedString.TableEntryReference.ReferenceType) {
+            switch (localizedString.TableEntryReference.ReferenceType) {
                 case TableEntryReference.Type.Name:
-                    sharedData.RenameKey(_localizedString.TableEntryReference.Key, key);
+                    sharedData.RenameKey(localizedString.TableEntryReference.Key, key);
                     break;
                 case TableEntryReference.Type.Id:
-                    sharedData.RenameKey(_localizedString.TableEntryReference.KeyId, key);
+                    sharedData.RenameKey(localizedString.TableEntryReference.KeyId, key);
                     break;
                default:
                    return;
             }
-           _localizedString.TableEntryReference = (TableEntryReference) sharedEntry.Id;
+           localizedString.TableEntryReference = (TableEntryReference) sharedEntry.Id;
             RaiseTableEntryModifiedEvent(sharedEntry);
         }
 
         public void RemoveSharedEntry() {
+            var localizedString = GetLocalizedString();
             _undo.RegisterSelfChanges("Remove key");
             var collection = GetTableCollection();
             _undo.RegisterCollectionChanges(collection, "Remove key");
-            collection.RemoveEntry(_localizedString.TableEntryReference);
-            _localizedString.TableEntryReference = default;
+            collection.RemoveEntry(localizedString.TableEntryReference);
+            localizedString.TableEntryReference = default;
             RaiseTableEntryRemovedEvent();
         }
 
         public void SetTableCollection(StringTableCollection collection) {
+            var localizedString = GetLocalizedString();
             _undo.RegisterSelfChanges("Select localization table");
-            _localizedString.TableReference = collection != null ? collection.TableCollectionNameReference : default;
+            localizedString.TableReference = collection != null ? collection.TableCollectionNameReference : default;
         }
 
         public void SetSharedEntryReferenceEmpty() {
+            var localizedString = GetLocalizedString();
             _undo.RegisterSelfChanges("Set empty");
-            _localizedString.SetReference(_localizedString.TableReference, null);
+            localizedString.SetReference(localizedString.TableReference, null);
         }
 
         public void SetComment(string comment) {
