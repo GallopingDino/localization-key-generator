@@ -1,10 +1,10 @@
 {
     "name": "com.dino.localization-key-generator",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "displayName": "Localization Key Generator",
     "description": "A set of attributes to generate localization keys and comments from code.\n\nPrerequisites:\nIt requires Unity Localization package and Odin Inspector.\n(See https://odininspector.com/)",
     "unity": "2019.4",
-    "documentationUrl": "https://bitbucket.org/GallopingDino/localization-key-generator/src/master",
+    "documentationUrl": "https://github.com/GallopingDino/localization-key-generator",
     "license": "MIT",
     "dependencies": {
         "com.unity.localization": "1.0.0"
