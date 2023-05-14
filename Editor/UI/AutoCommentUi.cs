@@ -43,6 +43,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             var sharedEntry = _editor.GetSharedEntry();
 
             if (sharedEntry == null) {
+                SkipButtonControl();
                 return;
             }
             
@@ -79,6 +80,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
             _settingsVersionOnPrevCommentSolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
             _commentSolver.CheckForErrors(_property, _attribute.Format);
+        }
+
+        private void SkipButtonControl() {
+            GUI.Button(new Rect(), GUIContent.none);
         }
     }
 }

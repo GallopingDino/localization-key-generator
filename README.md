@@ -103,7 +103,7 @@ There are three types of parameters you might use in your format strings:
 
 - Global parameters set in `LocalizationKeyGeneratorSettings` asset. These can be referenced anywhere in your project.
 - Built-in parameters. These are:
-	- `rootName` - a name of the root ScriptableObject or MonoBehaviour  in a snake_case
+	- `rootName` - a name of the root ScriptableObject or MonoBehaviour
 	- `uuid` - a GUID of the root ScriptableObject asset
 	- `listIndex` - an index of LocalizedString or any of its parents in collection
 	- `index` - a repeating key index. Only exists for key format strings

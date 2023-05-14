@@ -1,4 +1,5 @@
 using Sirenix.OdinInspector.Editor;
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,7 +14,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
         public override object Process(InspectorProperty property) {
             var scriptable = (ScriptableObject) property.ValueEntry.WeakSmartValue;
             if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(scriptable, out var guid, out long _)) {
-                return guid;
+                return Guid.Parse(guid);
             }
             return string.Empty;
         }
