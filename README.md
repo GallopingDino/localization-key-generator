@@ -14,14 +14,14 @@ Find the manifest.json file in the Packages folder of your project and add the f
 ### Settings
 Use menu item `Window/Localization Key Generator/Settings` to create a new or focus an existing `LocalizationKeyGeneratorSettings` asset.
 
-To begin with Localization Key Generator, add one or multiple existing locales to the `PreviewLocales` list in the inspector. These locals will be displayed on the "Auto" tab in a new simplified LocalizedString drawer. The default drawer with the full list of locales will still be available on the "Manual" tab.
+To begin with Localization Key Generator, add one or multiple existing locales to the `PreviewLocales` list in the inspector. These locales will be displayed on the "Auto" tab in a simplified LocalizedString drawer. The default drawer with the full list of locales will still be available on the "Manual" tab.
 
 You can also add project-wide parameters into `Parameters` array.
 
 ##  Usage
 ###  Generating keys
 
-Use `AutoKeyAttribute` on a LocalizedString field or a collection of LocalizedStrings and provide a key [format string](#markdown-header-format).
+Use `AutoKeyAttribute` on a LocalizedString field or a collection of LocalizedStrings and provide a key [format string](#format-string).
 
 ```c#
 public class InventoryItem : ScriptableObject {
@@ -37,7 +37,7 @@ public class InventoryItem : ScriptableObject {
 
 In the inspector window, you will see a simplified drawer for your LocalizedString. Select localization table and press `Generate` or just start typing localized text into a text field to generate key and create a new localization table entry.
 
-Press `Regenerate` to change the key for the current entry. Press `✕` to remove current entry from the table, `◯` to set entry reference empty without removing current entry from the table or `❐` to duplicate current entry with a new key.
+Press `Regenerate` to change the key for the current entry. Press `✕` to remove current entry from localization table, `◯` to set entry reference empty without removing current entry from the table or `❐` to duplicate current entry with a new key.
 
 If a generated key matches an existing key, it will be appended with an index, e.g. `Weapon/Tommy Gun/name-1`. The index position can be specified in the key format string. This ensures that even the first generated key will have a 0 index appended.
 
@@ -75,7 +75,7 @@ public class Dialog : ScriptableObject {
 A format string can contain both simple text pieces and resolvable strings enclosed in curly brackets. These resolvable strings will be evaluated during key generation and can be of one of the following types:
 
 - Enclosing type member names, e. g. `{Character}`
-- [Parameter names](#markdown-header-passing-parameters), e. g. `{rootName}`
+- [Parameter names](#passing-parameters), e. g. `{rootName}`
 - [Odin style expressions](https://odininspector.com/tutorials/value-and-action-resolvers/resolving-strings-to-stuff) starting with @, e. g. `{@{index} + 1}`
 
 

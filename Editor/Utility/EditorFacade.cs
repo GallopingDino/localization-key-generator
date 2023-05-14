@@ -234,6 +234,31 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             sharedEntry.Metadata.AddMetadata(new Comment { CommentText = comment });
         }
 
+        public Comment GetComment() {
+            var sharedData = GetSharedData();
+            var sharedEntry = GetSharedEntry();
+            
+            if (sharedData == null || sharedEntry == null) {
+                return null;
+            }
+            return sharedEntry.Metadata.GetMetadata<Comment>();
+        }
+
+        public void RemoveComment() {
+            var sharedData = GetSharedData();
+            var sharedEntry = GetSharedEntry();
+            
+            if (sharedData == null || sharedEntry == null) {
+                return;
+            }
+            _undo.RegisterSharedDataChanges(sharedData, "Remove comment");
+            var comment = sharedEntry.Metadata.GetMetadata<Comment>();
+            if (comment == null) {
+                return;
+            }
+            sharedEntry.Metadata.RemoveMetadata(comment);
+        }
+
         #endregion
 
         #region Events

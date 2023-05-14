@@ -249,7 +249,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         }
 
         private string GenerateFormatError(string format) {
-            return $"Invalid format <b>'{format}</b>";
+            return $"Invalid format <b>'{format}'</b>";
         }
 
         private string GenerateAnalysisDepthExceeded(string str) {

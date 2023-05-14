@@ -44,18 +44,32 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
             if (sharedEntry == null) {
                 SkipButtonControl();
+                SkipButtonControl();
                 return;
             }
             
-            var existingComment = sharedEntry.Metadata.GetMetadata<Comment>();
+            var existingComment = _editor.GetComment();
+            var hasComment = existingComment != null;
             var commentText = existingComment?.CommentText ?? "none";
             
             EditorGUILayout.BeginHorizontal();
             
             GUILayout.Label(new GUIContent($"Comment: {commentText}", tooltip: commentText), _styles.LabelStyle, _styles.LabelOptions);
 
-            if (GUILayout.Button("Regenerate", _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
+            if (GUILayout.Button(hasComment ? "Regenerate" : "Generate", _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
                 GenerateComment();
+            }
+
+            if (hasComment) {
+                if (GUILayout.Button(new GUIContent("✕", "Remove comment metadata"), _styles.SquareContentOptions)) {
+                    _editor.RemoveComment();
+                    GUIUtility.hotControl = 0;
+                    GUIUtility.keyboardControl = 0;
+                    GUIUtility.ExitGUI();
+                }
+            }
+            else {
+                SkipButtonControl();
             }
 
             EditorGUILayout.EndHorizontal();
