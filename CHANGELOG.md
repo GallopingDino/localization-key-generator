@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.3] - 2024-06-08
+
+### Changes
+
+* Added find an existing entry button [f6c9373](https://github.com/GallopingDino/localization-key-generator/commit/f6c93737104cfdb23ff69d8a03c5e6f73e2be5b0)
+
+* Added remove comment button [68d4724](https://github.com/GallopingDino/localization-key-generator/commit/68d47240d7f1f63bd0355e4b25f8c0bc23f6bb43)
+
+### Bug Fixes
+
+* Fixed GUID formatting and text area glitches [12ba1ec](https://github.com/GallopingDino/localization-key-generator/commit/12ba1ec8a6f6e9e76e431308d56d6b9ac7bb2b33)
+
 ## [1.0.2] - 2023-05-01
 
 ### Changes
