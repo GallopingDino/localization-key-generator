@@ -12,7 +12,7 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         protected override void Initialize() {
             var keyAttr = GetAutoKeyAttribute(Property);
             var commentAttr = GetAutoCommentAttribute(Property);
-            var editor = new EditorFacade(Property);
+            var editor = new PropertyEditor(Property);
             var styles = new Styles();
             _layout = keyAttr != null ? (ILayout) new FullLayout(Property, keyAttr, commentAttr, editor, styles, DrawDefaultInspector)
                                       : new SimplifiedLayout(Property, commentAttr, editor, styles, DrawDefaultInspector);

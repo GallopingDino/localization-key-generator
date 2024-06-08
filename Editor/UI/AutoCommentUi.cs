@@ -11,12 +11,12 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly CommentSolver _commentSolver;
         private readonly InspectorProperty _property;
         private readonly AutoCommentAttribute _attribute;
-        private readonly EditorFacade _editor;
+        private readonly PropertyEditor _editor;
         private readonly Styles _styles;
 
         private long _settingsVersionOnPrevCommentSolverRun = -1;
 
-        public AutoCommentUi(InspectorProperty property, AutoCommentAttribute attr, EditorFacade editor, Styles styles) {
+        public AutoCommentUi(InspectorProperty property, AutoCommentAttribute attr, PropertyEditor editor, Styles styles) {
             _commentSolver = new CommentSolver();
             _property = property;
             _attribute = attr;

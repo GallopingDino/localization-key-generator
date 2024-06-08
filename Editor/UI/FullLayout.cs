@@ -13,7 +13,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly AutoCommentUi _autoCommentUi;
         
         public FullLayout(InspectorProperty property, AutoKeyAttribute key, AutoCommentAttribute comment, 
-                                       EditorFacade editor, Styles styles, Action<GUIContent> defaultDrawer) {
+                                       PropertyEditor editor, Styles styles, Action<GUIContent> defaultDrawer) {
             _property = property;
             _defaultDrawer = defaultDrawer;
             _styles = styles;

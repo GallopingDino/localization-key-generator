@@ -8,7 +8,7 @@ using UnityEngine.Localization.Metadata;
 using UnityEngine.Localization.Tables;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Utility {
-    internal class EditorFacade {
+    internal class PropertyEditor {
         private static event Action<StringTableCollection, SharedTableData.SharedTableEntry> EntryAddedSystemEvent;
         private static event Action<SharedTableData.SharedTableEntry> EntryModifiedSystemEvent;
         
@@ -21,7 +21,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
 
         #region Initialization
 
-        public EditorFacade(InspectorProperty property) {
+        public PropertyEditor(InspectorProperty property) {
             _property = property;
             _undo = new Undo(property);
             InitializeSystemEvents();
@@ -122,7 +122,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             
             var newEntry = sharedData.AddKey(key);
             var localizedString = GetLocalizedString();
-            localizedString.TableEntryReference = (TableEntryReference) newEntry.Id;
+            localizedString.SetReference(localizedString.TableReference, (TableEntryReference) newEntry.Id);
             RaiseTableEntryAddedEvent(newEntry);
             return newEntry;
         }
@@ -173,7 +173,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
         }
 
         public void SetLocalizationTableEntryValue(StringTableEntry entry, string newText) {
-            _undo.RegisterLocalizationTableChanges(entry.Table, "Set smart format");
+            _undo.RegisterLocalizationTableChanges(entry.Table, "Set value");
             entry.Value = newText;
         }
 
@@ -193,7 +193,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
                default:
                    return;
             }
-           localizedString.TableEntryReference = (TableEntryReference) sharedEntry.Id;
+            localizedString.SetReference(localizedString.TableReference, (TableEntryReference) sharedEntry.Id);
             RaiseTableEntryModifiedEvent(sharedEntry);
         }
 
@@ -203,20 +203,26 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
             var collection = GetTableCollection();
             _undo.RegisterCollectionChanges(collection, "Remove key");
             collection.RemoveEntry(localizedString.TableEntryReference);
-            localizedString.TableEntryReference = default;
+            localizedString.SetReference(localizedString.TableReference, default);
             RaiseTableEntryRemovedEvent();
         }
 
-        public void SetTableCollection(StringTableCollection collection) {
+        public void SetSharedEntryReference(SharedTableData.SharedTableEntry entry) {
             var localizedString = GetLocalizedString();
-            _undo.RegisterSelfChanges("Select localization table");
-            localizedString.TableReference = collection != null ? collection.TableCollectionNameReference : default;
+            _undo.RegisterSelfChanges("Set entry");
+            localizedString.SetReference(localizedString.TableReference, (TableEntryReference) entry.Id);
         }
 
         public void SetSharedEntryReferenceEmpty() {
             var localizedString = GetLocalizedString();
             _undo.RegisterSelfChanges("Set empty");
             localizedString.SetReference(localizedString.TableReference, null);
+        }
+
+        public void SetTableCollection(StringTableCollection collection) {
+            var localizedString = GetLocalizedString();
+            _undo.RegisterSelfChanges("Select localization table");
+            localizedString.TableReference = collection != null ? collection.TableCollectionNameReference : default;
         }
 
         public void SetComment(string comment) {

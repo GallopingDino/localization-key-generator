@@ -24,7 +24,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly InspectorProperty _property;
         private readonly AutoKeyAttribute _attribute;
         private readonly Styles _styles;
-        private readonly EditorFacade _editor;
+        private readonly PropertyEditor _editor;
 
         private ReadOnlyCollection<StringTableCollection> _tableCollections;
         private string[] _collectionLabels;
@@ -33,7 +33,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         #region Initialization
 
-        public AutoKeyUi(InspectorProperty property, AutoKeyAttribute attr, EditorFacade editor, Styles styles) {
+        public AutoKeyUi(InspectorProperty property, AutoKeyAttribute attr, PropertyEditor editor, Styles styles) {
             _keySolver = new KeySolver();
             _property = property;
             _attribute = attr;
@@ -144,20 +144,33 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             GUILayout.Label(new GUIContent($"Key: {keyText}", tooltip: keyText), _styles.LabelStyle, _styles.LabelOptions);
 
             if (hasEntry == false && GUILayout.Button("Generate", _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
-                if (TryCreateLocalizationKey(sharedData, _attribute.Format, oldKey: null, out var key)) {
+                if (TryCreateUniqueLocalizationKey(sharedData, _attribute.Format, oldKey: null, out var key)) {
                     sharedEntry = _editor.CreateSharedEntry(key);
                 }
             }
 
+            var findButtonContent = new GUIContent("Find", "Find existing key in table");
+            if (hasEntry == false && GUILayout.Button(findButtonContent, _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
+                if (TryCreateLocalizationKey(_attribute.Format, out var key)) {
+                    if (sharedData.Contains(key)) {
+                        sharedEntry = sharedData.GetEntry(key);
+                        _editor.SetSharedEntryReference(sharedEntry);
+                    }
+                    else {
+                        Debug.Log($"Unable to find an existing entry with the key '{key}'");
+                    }
+                }
+            }
+
             if (hasEntry && GUILayout.Button("Regenerate", _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
-                if (TryCreateLocalizationKey(sharedData, _attribute.Format, sharedEntry.Key, out var key)) {
+                if (TryCreateUniqueLocalizationKey(sharedData, _attribute.Format, sharedEntry.Key, out var key)) {
                     _editor.RenameSharedEntry(key);
                 }
             }
 
             if (hasEntry) {
                 if (GUILayout.Button(new GUIContent("❐", "Duplicate table entry"), _styles.SquareContentOptions)) {
-                    if (TryCreateLocalizationKey(sharedData, _attribute.Format, sharedEntry.Key, out var key)) {
+                    if (TryCreateUniqueLocalizationKey(sharedData, _attribute.Format, sharedEntry.Key, out var key)) {
                         _editor.CreateSharedEntry(key);
                         _editor.CopySharedEntryValuesFrom(sharedEntry);
                     }
@@ -225,7 +238,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 entry = _editor.CreateLocalizationTableEntry(table, sharedEntry.Key);
             }
             else {
-                if (TryCreateLocalizationKey(table.SharedData, _attribute.Format, oldKey: null, key: out var key) == false) {
+                if (TryCreateUniqueLocalizationKey(table.SharedData, _attribute.Format, oldKey: null, key: out var key) == false) {
                     return;
                 }
 
@@ -261,16 +274,21 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         
         #region Localization tools
 
-        private bool TryCreateLocalizationKey(SharedTableData sharedData, string keyFormat, string oldKey, out string key) {
+        private bool TryCreateLocalizationKey(string keyFormat, out string key) {
+            _settingsVersionOnPrevKeySolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
+            return _keySolver.TryCreateKey(_property, keyFormat, out key);
+        }
+
+        private bool TryCreateUniqueLocalizationKey(SharedTableData sharedData, string keyFormat, string oldKey, out string key) {
             if (sharedData == null) {
                 key = null;
                 return false;
             }
             
             _settingsVersionOnPrevKeySolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            return _keySolver.TryCreateKey(_property, keyFormat, sharedData, oldKey, out key);
+            return _keySolver.TryCreateUniqueKey(_property, keyFormat, sharedData, oldKey, out key);
         }
-        
+
         #endregion
 
         #region Layout

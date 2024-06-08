@@ -7,16 +7,53 @@ using Dino.LocalizationKeyGenerator.Editor.Solvers;
 namespace Dino.LocalizationKeyGenerator.Editor.Tests {
     public class SolverImplTests {
         [Serializable]
-        [AutoKeyParams("parameter", nameof(ContainingTypeField))]
+        [AutoKeyParams("container-parameter", nameof(ContainingTypeField))]
         private class LocalizedStringContainer {
+            [AutoKeyParams("field-parameter", "Field parameter")]
             public LocalizedString TargetString;
-            public string ContainingTypeField = "ABC";
+            public string ContainingTypeField = "Container field";
         }
 
         private static InspectorProperty FindTargetStringProperty(PropertyTree<LocalizedStringContainer> containerTree) {
             return containerTree.RootProperty.FindChild(p => p.Name == nameof(LocalizedStringContainer.TargetString), includeSelf: false);
         }
-        
+
+        [Test]
+        public void TryResolveLine_FieldParameter_ReturnsParameterValue() {
+            var stringContainer = new LocalizedStringContainer();
+            using (var containerTree = new PropertyTree<LocalizedStringContainer>(new[] { stringContainer })) {
+                var stringProperty = FindTargetStringProperty(containerTree);
+                var solver = new SolverImpl();
+                var line = "{field-parameter}";
+
+                solver.CollectParameters(stringProperty);
+                var isResolved = solver.TryResolveLine(stringProperty, line, out var resolvedLine);
+                var errorReport = solver.GetErrors();
+
+                Assert.IsTrue(isResolved);
+                Assert.AreEqual("Field parameter", resolvedLine);
+                Assert.IsEmpty(errorReport);
+            }
+        }
+
+        [Test]
+        public void TryResolveLine_ContainerParameter_ReturnsParameterValue() {
+            var stringContainer = new LocalizedStringContainer();
+            using (var containerTree = new PropertyTree<LocalizedStringContainer>(new[] { stringContainer })) {
+                var stringProperty = FindTargetStringProperty(containerTree);
+                var solver = new SolverImpl();
+                var line = "{container-parameter}";
+
+                solver.CollectParameters(stringProperty);
+                var isResolved = solver.TryResolveLine(stringProperty, line, out var resolvedLine);
+                var errorReport = solver.GetErrors();
+
+                Assert.IsTrue(isResolved);
+                Assert.AreEqual(stringContainer.ContainingTypeField, resolvedLine);
+                Assert.IsEmpty(errorReport);
+            }
+        }
+
         [Test]
         public void TryResolveLine_ContainerFieldName_ReturnsFieldValue() {
             var stringContainer = new LocalizedStringContainer();
@@ -25,46 +62,28 @@ namespace Dino.LocalizationKeyGenerator.Editor.Tests {
                 var solver = new SolverImpl();
                 var line = $"{{{nameof(LocalizedStringContainer.ContainingTypeField)}}}";
 
-                var isFormatted = solver.TryResolveLine(stringProperty, line, out var formattedLine);
+                var isResolved = solver.TryResolveLine(stringProperty, line, out var resolvedLine);
                 var errorReport = solver.GetErrors();
 
-                Assert.IsTrue(isFormatted);
-                Assert.AreEqual(stringContainer.ContainingTypeField, formattedLine);
+                Assert.IsTrue(isResolved);
+                Assert.AreEqual(stringContainer.ContainingTypeField, resolvedLine);
                 Assert.IsEmpty(errorReport);
             }
         }
-        
-        [Test]
-        public void TryResolveLine_ContainerParameterName_ReturnsParameterValue() {
-            var stringContainer = new LocalizedStringContainer();
-            using (var containerTree = new PropertyTree<LocalizedStringContainer>(new[] { stringContainer })) {
-                var stringProperty = FindTargetStringProperty(containerTree);
-                var solver = new SolverImpl();
-                var line = "{parameter}";
 
-                solver.CollectParameters(stringProperty);
-                var isFormatted = solver.TryResolveLine(stringProperty, line, out var formattedLine);
-                var errorReport = solver.GetErrors();
-
-                Assert.IsTrue(isFormatted);
-                Assert.AreEqual(stringContainer.ContainingTypeField, formattedLine);
-                Assert.IsEmpty(errorReport);
-            }
-        }
-        
         [Test]
         public void TryResolveLine_Expression_ReturnsSolvedExpression() {
             var localizedString = new LocalizedString(default, default);
-            using (var containerTree = new PropertyTree<LocalizedString>(new[] { localizedString })) {
-                var stringProperty = containerTree.RootProperty;
+            using (var stringTree = new PropertyTree<LocalizedString>(new[] { localizedString })) {
+                var stringProperty = stringTree.RootProperty;
                 var solver = new SolverImpl();
                 var line = "{@1 + 2}";
                 
-                var isFormatted = solver.TryResolveLine(stringProperty, line, out var formattedLine);
+                var isResolved = solver.TryResolveLine(stringProperty, line, out var resolvedLine);
                 var errorReport = solver.GetErrors();
                 
-                Assert.IsTrue(isFormatted);
-                Assert.AreEqual("3", formattedLine);
+                Assert.IsTrue(isResolved);
+                Assert.AreEqual("3", resolvedLine);
                 Assert.IsEmpty(errorReport);
             }
         }

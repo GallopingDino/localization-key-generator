@@ -20,7 +20,21 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             _solver.DefaultStringFormat = LocalizationKeyGeneratorSettings.Instance.DefaultKeyStringFormat;
         }
 
-        public bool TryCreateKey(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
+        public bool TryCreateKey(InspectorProperty property, string format, out string key) {
+            return TryCreateKeyCore(property, format, sharedData: null, oldKey: null, out key);
+        }
+
+        public bool TryCreateUniqueKey(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
+            return TryCreateKeyCore(property, format, sharedData, oldKey, out key);
+        }
+
+        public void CheckForErrors(InspectorProperty property, string format) {
+            TryCreateKeyCore(property, format, sharedData: null, oldKey: string.Empty, key: out _);
+        }
+
+        public string GetErrors() => _solver.GetErrors();
+
+        private bool TryCreateKeyCore(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
             key = null;
             _solver.ClearErrors();
 
@@ -31,10 +45,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             _solver.CollectParameters(property);
             return TryBruteForceKeyIndex(property, resolvedFormat, sharedData, oldKey, out key);
         }
-
-        public void CheckForErrors(InspectorProperty property, string format) => TryCreateKey(property, format, sharedData: null, oldKey: string.Empty, key: out _);
-
-        public string GetErrors() => _solver.GetErrors();
 
         private bool TryBruteForceKeyIndex(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
             var index = 0;

@@ -11,7 +11,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly AutoCommentUi _autoCommentUi;
         
         public SimplifiedLayout(InspectorProperty property, AutoCommentAttribute comment, 
-                                             EditorFacade editor, Styles styles, Action<GUIContent> defaultDrawer) {
+                                             PropertyEditor editor, Styles styles, Action<GUIContent> defaultDrawer) {
             _defaultDrawer = defaultDrawer;
             _styles = styles;
 
