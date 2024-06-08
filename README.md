@@ -35,7 +35,7 @@ public class InventoryItem : ScriptableObject {
 
 ![](/Documentation~/images/AutoKey.png)
 
-In the inspector window, you will see a simplified drawer for your LocalizedString. Select localization table and press `Generate` or just start typing localized text into a text field to generate key and create a new localization table entry. Press `Find` to generate a key and use it to search for an existing table entry.
+In the inspector window, you will see a simplified drawer for your LocalizedString. Select localization table and press `Generate` or just start typing localized text into a text field to generate key and create a new localization table entry. Or press `Find` to generate a key and use it to search for an existing table entry.
 
 Press `Regenerate` to change the key for the current entry. Press `✕` to remove current entry from localization table, `◯` to set entry reference empty without removing current entry from the table or `❐` to duplicate current entry with a new key.
 

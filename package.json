@@ -1,6 +1,6 @@
 {
     "name": "com.dino.localization-key-generator",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "displayName": "Localization Key Generator",
     "description": "A set of attributes to generate localization keys and comments from code.\n\nPrerequisites:\nIt requires Unity Localization package and Odin Inspector.\n(See https://odininspector.com/)",
     "unity": "2019.4",
