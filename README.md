@@ -74,7 +74,7 @@ public class Dialog : ScriptableObject {
 ### Format string
 A format string can contain both simple text pieces and resolvable strings enclosed in curly brackets. These resolvable strings will be evaluated during key generation and can be of one of the following types:
 
-- Enclosing type member names, e. g. `{Character}`
+- Containing type member names, e. g. `{Character}`
 - [Parameter names](#passing-parameters), e. g. `{rootName}`
 - [Odin style expressions](https://odininspector.com/tutorials/value-and-action-resolvers/resolving-strings-to-stuff) starting with @, e. g. `{@{index} + 1}`
 

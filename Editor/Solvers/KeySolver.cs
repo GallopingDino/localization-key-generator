@@ -39,11 +39,11 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         private bool TryBruteForceKeyIndex(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
             var index = 0;
             do {
-                _solver.Parameters[IndexParameterName] = index;
+                _solver.OverrideParameter(IndexParameterName, index);
                 if (index == 1) {
                     format = AppendFormatWithIndexIfNone(format);
                 }
-                if (_solver.TryFormatLine(property, format, out key) == false) {
+                if (_solver.TryResolveLine(property, format, out key) == false) {
                     return false;
                 }
                 index++;

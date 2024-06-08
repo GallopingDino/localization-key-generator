@@ -25,7 +25,109 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         private static string _parameterParserPattern;
         
         public string DefaultStringFormat { get; set; }
-        public IDictionary<string, object> Parameters => _parameters;
+
+        #region Line resolution
+
+        public bool TryResolveFormat(InspectorProperty property, string input, out string resolved) {
+            resolved = TryResolveStringWithOdin(property, input, out var resolvedFormatObj) ? resolvedFormatObj?.ToString() : input;
+            
+            if (string.IsNullOrEmpty(resolved)) {
+                SetError(CreateFormatError(input));
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryResolveLine(InspectorProperty property, string format, out string result) {
+            result = null;
+
+            if (string.IsNullOrEmpty(format)) {
+                result = format;
+                return true;
+            }
+
+            var depth = 0;
+            var parameterParserPattern = BuildParameterParserPattern();
+            while (Regex.Matches(format, parameterParserPattern, 0) is var parsedParameters && parsedParameters.Count > 0) {
+                if (depth++ > MaxAnalysisDepth) {
+                    SetError(CreateAnalysisDepthExceededError(format));
+                    break;
+                }
+                foreach (var match in parsedParameters.Cast<Match>().Reverse()) {
+                    var parameterName = match.Groups[1].Value;
+                    var parameterFormat = match.Groups.Count > 2 ? match.Groups[2].Value : string.Empty;
+                    if (TryResolveParameter(property, parameterName, parameterFormat, out var formattedParameter) == false) {
+                        return false;
+                    }
+                    
+                    format = format.Substring(0, match.Index) + formattedParameter + format.Substring(match.Index + match.Length);
+                }
+            }
+
+            result = format;
+            return true;
+        }
+
+        private bool TryResolveParameter(InspectorProperty property, string parameterName, string parameterFormat, out string formattedParameter) {
+            if (_parameters.TryGetValue(parameterName, out var parameterValue) == false && TryResolveStringWithOdin(property, parameterName, out parameterValue) == false) {
+                SetError(CreateParameterNotFoundError(parameterName));
+                formattedParameter = null;
+                return false;
+            }
+                    
+            try {
+                formattedParameter = ApplyParameterFormatting(parameterValue, ref parameterFormat);
+                return true;
+            }
+            catch {
+                SetError(CreateParameterFormatError(parameterName, parameterFormat));
+                formattedParameter = null;
+                return false;
+            }
+        }
+
+        private bool TryResolveStringWithOdin(InspectorProperty property, string str, out object resolved) {
+            try {
+                var resolver = ValueResolver.Get<object>(property, str);
+                if (resolver.HasError) {
+                    resolved = null;
+                    return false;
+                }
+                resolved = resolver.GetValue();
+                return true;
+            }
+            catch {
+                resolved = null;
+                return false;
+            }
+        }
+
+        private static string BuildParameterParserPattern() {
+            if (string.IsNullOrEmpty(_parameterParserPattern) == false) {
+                return _parameterParserPattern;
+            }
+            var parameterNamePattern = $@"@?{RH.AnyOf(RH.Letter, RH.Digit, RH.Space, @"_\+\-\*\%\(\)\.")}+";
+            var formatPattern = $@"{RH.Not(Regex.Escape("}"))}+";
+            _parameterParserPattern = $@"\{{{RH.Space}*({parameterNamePattern}){RH.Space}*\:?{RH.Space}*({formatPattern})?{RH.Space}*\}}";
+            return _parameterParserPattern;
+        }
+
+        private string ApplyParameterFormatting(object parameterValue, ref string parameterFormat) {
+            switch (parameterValue) {
+                case var _ when _textFormatter.CanFormat(parameterValue.GetType()):
+                    if (string.IsNullOrEmpty(parameterFormat)) parameterFormat = DefaultStringFormat;
+                    return _textFormatter.Format(parameterValue, parameterFormat);
+                case IFormattable formattableValue:
+                    return formattableValue.ToString(parameterFormat, CultureInfo.InvariantCulture);
+                case var _ when string.IsNullOrEmpty(parameterFormat):
+                    return parameterValue.ToString();
+                default:
+                    throw new FormatException();
+            }
+        }
+
+        #endregion
 
         #region Parameters processing
 
@@ -34,6 +136,10 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             FillGlobalParameters();
             BuildPropertyHierarchy(property);
             TraversePropertyHierarchy();
+        }
+
+        public void OverrideParameter(string name, object value) {
+            _parameters[name] = value;
         }
 
         private void ClearParameters() {
@@ -77,14 +183,14 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         private void FillAttributeProvidedParameters(InspectorProperty property) {
             foreach (var parameter in GetParameterAttributes(property)) {
                 var value = parameter.Value;
-                if (TryResolveLine(property, value, out var resolvedObject) && !(resolvedObject is string)) {
+                if (TryResolveStringWithOdin(property, value, out var resolvedObject) && !(resolvedObject is string)) {
                     _parameters[parameter.Key] = resolvedObject;
                     continue;
                 }
 
                 var resolvedStr = resolvedObject as string ?? value;
 
-                if (TryFormatLine(property, resolvedStr, out var formattedStr)) {
+                if (TryResolveLine(property, resolvedStr, out var formattedStr)) {
                     _parameters[parameter.Key] = formattedStr;
                 }
             }
@@ -107,7 +213,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
                     continue;
                 }
 
-                if (TryFormatLine(property, processorResolvedString, out var processorFormattedStr)) {
+                if (TryResolveLine(property, processorResolvedString, out var processorFormattedStr)) {
                     _parameters[processor.ParameterName] = processorFormattedStr;
                 }
             }
@@ -128,104 +234,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
 
         #endregion
 
-        #region Resolve tools
-
-        public bool TryResolveFormat(InspectorProperty property, string format, out string resolved) {
-            resolved = TryResolveLine(property, format, out var resolvedFormatObj) ? resolvedFormatObj?.ToString() : format;
-            
-            if (string.IsNullOrEmpty(resolved)) {
-                SetError(GenerateFormatError(format));
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool TryResolveLine(InspectorProperty property, string str, out object resolved) {
-            try {
-                var resolver = ValueResolver.Get<object>(property, str);
-                if (resolver.HasError) {
-                    resolved = null;
-                    return false;
-                }
-                resolved = resolver.GetValue();
-                return true;
-            }
-            catch {
-                resolved = null;
-                return false;
-            }
-        }
-
-        #endregion
-
-        #region Format tools
-
-        public bool TryFormatLine(InspectorProperty property, string str, out string result) {
-            result = null;
-
-            if (string.IsNullOrEmpty(str)) {
-                result = str;
-                return true;
-            }
-
-            var depth = 0;
-            var parameterParserPattern = BuildParameterParserPattern();
-            while (Regex.Matches(str, parameterParserPattern, 0) is var parsedParameters && parsedParameters.Count > 0) {
-                if (depth++ > MaxAnalysisDepth) {
-                    SetError(GenerateAnalysisDepthExceeded(str));
-                    break;
-                }
-                foreach (var match in parsedParameters.Cast<Match>().Reverse()) {
-                    var parameterName = match.Groups[1].Value;
-                    var parameterFormat = match.Groups.Count > 2 ? match.Groups[2].Value : string.Empty;
-                    if (_parameters.TryGetValue(parameterName, out var parameterValue) == false
-                        && TryResolveLine(property, parameterName, out parameterValue) == false) {
-                        SetError(GenerateParameterNotFoundError(parameterName));
-                        return false;
-                    }
-                    
-                    try {
-                        string formattedParameter;
-                        switch (parameterValue) {
-                            case var _ when _textFormatter.CanFormat(parameterValue.GetType()):
-                                if (string.IsNullOrEmpty(parameterFormat)) parameterFormat = DefaultStringFormat;
-                                formattedParameter = _textFormatter.Format(parameterValue, parameterFormat);
-                                break;
-                            case IFormattable formattableValue:
-                                formattedParameter = formattableValue.ToString(parameterFormat, CultureInfo.InvariantCulture);
-                                break;
-                            case var _ when string.IsNullOrEmpty(parameterFormat):
-                                formattedParameter = parameterValue.ToString();
-                                break;
-                            default:
-                                throw new FormatException();
-                        }
-                        str = str.Substring(0, match.Index) + formattedParameter + str.Substring(match.Index + match.Length);
-                    }
-                    catch {
-                        SetError(GenerateParameterFormatError(parameterName, parameterFormat));
-                        return false;
-                    }
-                }
-            }
-
-            result = str;
-            return true;
-        }
-
-        private static string BuildParameterParserPattern() {
-            if (string.IsNullOrEmpty(_parameterParserPattern) == false) {
-                return _parameterParserPattern;
-            }
-            var parameterNamePattern = $@"@?{RH.AnyOf(RH.Letter, RH.Digit, RH.Space, @"_\+\-\*\%\(\)\.")}+";
-            var formatPattern = $@"{RH.Not(Regex.Escape("}"))}+";
-            _parameterParserPattern = $@"\{{{RH.Space}*({parameterNamePattern}){RH.Space}*\:?{RH.Space}*({formatPattern})?{RH.Space}*\}}";
-            return _parameterParserPattern;
-        }
-
-        #endregion
-
         #region Errors
 
         public string GetErrors() {
@@ -240,19 +248,19 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             _errorBuilder.AppendLine(message);
         }
 
-        private string GenerateParameterNotFoundError(string parameterName) {
+        private string CreateParameterNotFoundError(string parameterName) {
             return $"Please provide parameter <b>{parameterName}</b>";
         }
 
-        private string GenerateParameterFormatError(string parameterName, string format) {
+        private string CreateParameterFormatError(string parameterName, string format) {
             return $"Invalid parameter <b>{parameterName}</b> format <b>'{format}'</b>";
         }
 
-        private string GenerateFormatError(string format) {
+        private string CreateFormatError(string format) {
             return $"Invalid format <b>'{format}'</b>";
         }
 
-        private string GenerateAnalysisDepthExceeded(string str) {
+        private string CreateAnalysisDepthExceededError(string str) {
             return $"Invalid format <b>'{str}'</b>. Analysis depth exceeded";
         }
 

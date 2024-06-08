@@ -23,7 +23,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             }
 
             _solver.CollectParameters(property);
-            return _solver.TryFormatLine(property, resolvedFormat, out comment);
+            return _solver.TryResolveLine(property, resolvedFormat, out comment);
         }
         
         public void CheckForErrors(InspectorProperty property, string format) => TryCreateComment(property, format, comment: out _);
