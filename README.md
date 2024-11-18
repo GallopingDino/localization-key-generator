@@ -103,10 +103,11 @@ There are three types of parameters you might use in your format strings:
 
 - Global parameters set in `LocalizationKeyGeneratorSettings` asset. These can be referenced anywhere in your project.
 - Built-in parameters. These are:
-	- `rootName` - a name of the root ScriptableObject or MonoBehaviour
-	- `uuid` - a GUID of the root ScriptableObject asset
-	- `listIndex` - an index of LocalizedString or any of its parents in collection
-	- `index` - a repeating key index. Only exists for key format strings
+	- `rootName` - the name of the root ScriptableObject or MonoBehaviour
+	- `uuid` - the GUID of the root ScriptableObject asset
+	- `listIndex` - the index of LocalizedString or any of its parents in collection
+	- `dictionaryKey` - the key corresponding to LocalizedString or any of its parents in a dictionary
+	- `index` - the repeating key index. Only exists for key format strings
 - Custom parameters
 
 To introduce custom parameters use `AutoKeyParamsAttribute`. This attribute can be applied to a field limiting this parameter's scope to this field and any nested `LocalizedStrings` in the object graph. Alternatively it can be applied to the whole class making this parameter accessible from any `LocalizedString` field in this class or any nested fields. Provide parameter name and a format string that will be resolved to parameter value.
@@ -204,7 +205,10 @@ public class ItemLevel {
 You can achieve the same result by setting default case style format in `LocalizationKeyGeneratorSettings` using `Default Key / Comment String Format` fields. If by default you prefer to keep original case style, set these fields empty.
 
 ## Author
-Vladimir Kuznetsov, a game developer.
+Vladimir Kuznetsov
+
+[![](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/vladimir-kuznetsov-games/)[![](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/GallopingDino)
+
 
 ## License
 
