@@ -28,6 +28,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Settings {
                 if (_instance != null) {
                     return _instance;
                 }
+                
                 var guid = UnityEditor.AssetDatabase.FindAssets($"t:{nameof(LocalizationKeyGeneratorSettings)}").FirstOrDefault();
                 if (string.IsNullOrEmpty(guid) == false) {
                     var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
@@ -55,7 +56,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Settings {
         }
 
         private void OnValidate() {
-            Instance._parameters.Refresh();
+            _parameters.Refresh();
             Version++;
             Changed?.Invoke();
         }
