@@ -16,12 +16,12 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
             if (parentDictionary == null) {
                 return false;
             }
-            return GetKeyBuyValue(parentDictionary, property.ValueEntry.WeakSmartValue) != null;
+            return GetKeyByValue(parentDictionary, property.ValueEntry.WeakSmartValue) != null;
         }
 
         public override object Process(InspectorProperty property) {
             var parentDictionary = GetFirstParentDictionary(property);
-            return GetKeyBuyValue(parentDictionary, property.ValueEntry.WeakSmartValue);
+            return GetKeyByValue(parentDictionary, property.ValueEntry.WeakSmartValue);
         }
         
         private IDictionary GetFirstParentDictionary(InspectorProperty property) {
@@ -35,7 +35,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Processors {
             return null;
         }
         
-        private object GetKeyBuyValue(IDictionary dictionary, object value) {
+        private object GetKeyByValue(IDictionary dictionary, object value) {
             foreach (var key in dictionary.Keys) {
                 if (dictionary[key].Equals(value)) {
                     return key;
