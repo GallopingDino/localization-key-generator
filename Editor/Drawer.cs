@@ -11,6 +11,7 @@ namespace Dino.LocalizationKeyGenerator.Editor {
     internal class Drawer : PropertyDrawer {
         private class DrawerState {
             public ILayout Layout;
+            public Styles Styles;
         }
 
         private readonly Dictionary<string, DrawerState> _states = new Dictionary<string, DrawerState>();
@@ -26,6 +27,7 @@ namespace Dino.LocalizationKeyGenerator.Editor {
             }
 
             var state = GetOrCreateState(property);
+            state.Styles.TrackWidth(position);
             state.Layout.Draw(label);
         }
 
@@ -43,6 +45,7 @@ namespace Dino.LocalizationKeyGenerator.Editor {
             var editor = new PropertyEditor(context);
             var styles = new Styles();
 
+            state.Styles = styles;
             state.Layout = keyAttr != null
                 ? (ILayout) new FullLayout(context, keyAttr, commentAttr, editor, styles, l => DrawDefaultProperty(property, l))
                 : new SimplifiedLayout(context, commentAttr, editor, styles, l => DrawDefaultProperty(property, l));

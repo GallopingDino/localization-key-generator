@@ -24,9 +24,11 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             Update();
 
             BeginBox();
+            EditorGUI.indentLevel++;
             _defaultDrawer.Invoke(label);
             _autoCommentUi?.DrawErrors();
             _autoCommentUi?.DrawComment();
+            EditorGUI.indentLevel--;
             EndBox();
         }
 
