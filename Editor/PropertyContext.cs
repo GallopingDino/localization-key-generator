@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace Dino.LocalizationKeyGenerator.Editor {
@@ -10,25 +11,43 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         private static readonly Dictionary<(Type, string), FieldInfo> FieldInfoCache = new Dictionary<(Type, string), FieldInfo>();
         private const BindingFlags AllInstanceFields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+        private readonly SerializedProperty _serializedProperty;
+        
         private PropertyContext _parent;
         private bool _parentResolved;
         private Type _valueType;
         private bool _valueTypeResolved;
         private FieldInfo _fieldInfo;
         private bool _fieldInfoResolved;
+        private string _resolvedPath;
+        private bool _resolvedPathInitialized;
 
-        public SerializedProperty SerializedProperty { get; }
-        public string Path => SerializedProperty.propertyPath;
-        public string Name => SerializedProperty.name;
-        public Object RootObject => SerializedProperty.serializedObject.targetObject;
+        // Hold SO reference to prevent garbage collection when SerializedProperty was resolved from a different SerializedObject
+        // This happens when Odin emits wrapper ScriptableObjects for properties
+        private SerializedObject _actualSerializedObject;
 
-        public PropertyContext(SerializedProperty serializedProperty) {
-            SerializedProperty = serializedProperty;
+        public string Path => _serializedProperty.propertyPath;
+        public string Name => _serializedProperty.name;
+        public Object RootObject => _serializedProperty.serializedObject.targetObject;
+
+        private string ResolvedPath {
+            get {
+                if (_resolvedPathInitialized) {
+                    return _resolvedPath;
+                }
+
+                _resolvedPathInitialized = true;
+                _resolvedPath = FindFullPropertyPath();
+                return _resolvedPath;
+            }
         }
 
         public virtual PropertyContext Parent {
             get {
-                if (_parentResolved) return _parent;
+                if (_parentResolved) {
+                    return _parent;
+                }
+
                 _parentResolved = true;
                 _parent = ResolveParent();
                 return _parent;
@@ -37,7 +56,10 @@ namespace Dino.LocalizationKeyGenerator.Editor {
 
         public virtual Type ValueType {
             get {
-                if (_valueTypeResolved) return _valueType;
+                if (_valueTypeResolved) {
+                    return _valueType;
+                }
+
                 _valueTypeResolved = true;
                 var value = GetValue();
                 if (value != null) {
@@ -59,21 +81,41 @@ namespace Dino.LocalizationKeyGenerator.Editor {
 
         public bool IsArrayElement {
             get {
-                var path = SerializedProperty.propertyPath;
+                var path = ResolvedPath;
                 return path.Contains(".Array.data[");
             }
         }
 
         public int ArrayIndex {
             get {
-                if (!IsArrayElement) return -1;
-                var path = SerializedProperty.propertyPath;
+                if (!IsArrayElement) {
+                    return -1;
+                }
+
+                var path = ResolvedPath;
                 var lastBracket = path.LastIndexOf('[');
-                if (lastBracket < 0) return -1;
+                if (lastBracket < 0) {
+                    return -1;
+                }
+
                 var closeBracket = path.IndexOf(']', lastBracket);
-                if (closeBracket < 0) return -1;
+                if (closeBracket < 0) {
+                    return -1;
+                }
+
                 var indexStr = path.Substring(lastBracket + 1, closeBracket - lastBracket - 1);
                 return int.TryParse(indexStr, out var idx) ? idx : -1;
+            }
+        }
+
+        public PropertyContext(SerializedProperty serializedProperty) {
+            var actualProperty = TryResolveFromActualObject(serializedProperty);
+            if (actualProperty != null) {
+                _actualSerializedObject = actualProperty.serializedObject;
+                _serializedProperty = actualProperty;
+            }
+            else {
+                _serializedProperty = serializedProperty;
             }
         }
 
@@ -85,7 +127,7 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         }
 
         public virtual object GetValue() {
-            return ResolveValue(RootObject, SerializedProperty.propertyPath);
+            return ResolveValue(RootObject, ResolvedPath);
         }
 
         public T GetAttribute<T>() where T : Attribute {
@@ -102,19 +144,19 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         private FieldInfo GetFieldInfo() {
             if (_fieldInfoResolved) return _fieldInfo;
             _fieldInfoResolved = true;
-            _fieldInfo = ResolveFieldInfo(RootObject.GetType(), SerializedProperty.propertyPath);
+            _fieldInfo = ResolveFieldInfo(RootObject.GetType(), ResolvedPath);
             return _fieldInfo;
         }
 
         private PropertyContext ResolveParent() {
-            var path = SerializedProperty.propertyPath;
+            var path = ResolvedPath;
 
             // Handle array element: strip .Array.data[N]
             if (path.EndsWith("]")) {
                 var arrayDataIdx = path.LastIndexOf(".Array.data[", StringComparison.Ordinal);
                 if (arrayDataIdx >= 0) {
                     var parentPath = path.Substring(0, arrayDataIdx);
-                    var parentProp = SerializedProperty.serializedObject.FindProperty(parentPath);
+                    var parentProp = _serializedProperty.serializedObject.FindProperty(parentPath);
                     return parentProp != null ? new PropertyContext(parentProp) : null;
                 }
             }
@@ -122,17 +164,16 @@ namespace Dino.LocalizationKeyGenerator.Editor {
             // Handle regular nested: strip last .fieldName
             var lastDot = path.LastIndexOf('.');
             if (lastDot < 0) {
-                // Root-level property — parent is the root object itself
                 return CreateRootContext();
             }
 
             var parentFieldPath = path.Substring(0, lastDot);
-            var parentSerializedProp = SerializedProperty.serializedObject.FindProperty(parentFieldPath);
+            var parentSerializedProp = _serializedProperty.serializedObject.FindProperty(parentFieldPath);
             return parentSerializedProp != null ? new PropertyContext(parentSerializedProp) : null;
         }
 
         private PropertyContext CreateRootContext() {
-            var so = SerializedProperty.serializedObject;
+            var so = _serializedProperty.serializedObject;
             // Use a known property that always exists as a sentinel for root
             var scriptProp = so.FindProperty("m_Script");
             if (scriptProp != null) {
@@ -141,12 +182,76 @@ namespace Dino.LocalizationKeyGenerator.Editor {
             return null;
         }
 
-        internal static object ResolveValue(object current, string propertyPath) {
-            if (current == null || string.IsNullOrEmpty(propertyPath)) return current;
+        private string FindFullPropertyPath() {
+            var path = _serializedProperty.propertyPath;
+
+            if (ResolveFieldInfo(RootObject.GetType(), path) != null) {
+                return path;
+            }
+
+            // Path can't be resolved from root (e.g., Odin passed a relative path).
+            // Search the SerializedObject for a property with a matching path suffix.
+            var so = _serializedProperty.serializedObject;
+            var suffix = "." + path;
+            var iter = so.GetIterator();
+            while (iter.Next(true)) {
+                var iterPath = iter.propertyPath;
+                if (!iterPath.EndsWith(suffix)) {
+                    continue;
+                }
+
+                if (SerializedProperty.DataEquals(_serializedProperty, iter)) {
+                    return iterPath;
+                }
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Necessary for Odin compatibility.
+        /// Odin emits wrapper ScriptableObjects for properties.
+        /// This method detects Odin emitted ScriptableObjects and resolves the property
+        /// from the actual inspected object to restore the full property hierarchy.
+        /// </summary>
+        private static SerializedProperty TryResolveFromActualObject(SerializedProperty property) {
+            var rootType = property.serializedObject.targetObject.GetType();
+            if (rootType.FullName == null || !rootType.FullName.Contains("EmittedUnityProperties")) {
+                return null;
+            }
+
+            var actualObject = Selection.activeObject;
+            if (actualObject == null) {
+                return null;
+            }
+
+            var actualSerializedObject = new SerializedObject(actualObject);
+            var path = property.propertyPath;
+            var suffix = "." + path;
+            var iter = actualSerializedObject.GetIterator();
+            while (iter.Next(true)) {
+                if (!iter.propertyPath.EndsWith(suffix)) {
+                    continue;
+                }
+
+                if (SerializedProperty.DataEquals(property, iter)) {
+                    return iter.Copy();
+                }
+            }
+
+            return null;
+        }
+
+        private static object ResolveValue(object current, string propertyPath) {
+            if (current == null || string.IsNullOrEmpty(propertyPath)) {
+                return current;
+            }
 
             var segments = propertyPath.Split('.');
             for (var i = 0; i < segments.Length; i++) {
-                if (current == null) return null;
+                if (current == null) {
+                    return null;
+                }
 
                 var segment = segments[i];
 
@@ -164,7 +269,10 @@ namespace Dino.LocalizationKeyGenerator.Editor {
                 }
 
                 var fi = FindFieldInHierarchy(current.GetType(), segment);
-                if (fi == null) return null;
+                if (fi == null) {
+                    return null;
+                }
+
                 current = fi.GetValue(current);
             }
 
@@ -172,14 +280,18 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         }
 
         private static FieldInfo ResolveFieldInfo(Type rootType, string propertyPath) {
-            if (rootType == null || string.IsNullOrEmpty(propertyPath)) return null;
+            if (rootType == null || string.IsNullOrEmpty(propertyPath)) {
+                return null;
+            }
 
             var segments = propertyPath.Split('.');
             var currentType = rootType;
             FieldInfo lastField = null;
 
             for (var i = 0; i < segments.Length; i++) {
-                if (currentType == null) return null;
+                if (currentType == null) {
+                    return null;
+                }
 
                 var segment = segments[i];
 
@@ -192,7 +304,9 @@ namespace Dino.LocalizationKeyGenerator.Editor {
                 }
 
                 var fi = FindFieldInHierarchy(currentType, segment);
-                if (fi == null) return null;
+                if (fi == null) {
+                    return null;
+                }
                 lastField = fi;
                 currentType = fi.FieldType;
             }
@@ -201,17 +315,24 @@ namespace Dino.LocalizationKeyGenerator.Editor {
         }
 
         private static Type GetElementType(Type collectionType) {
-            if (collectionType.IsArray) return collectionType.GetElementType();
+            if (collectionType.IsArray) {
+                return collectionType.GetElementType();
+            }
+
             if (collectionType.IsGenericType) {
                 var args = collectionType.GetGenericArguments();
-                if (args.Length > 0) return args[args.Length - 1]; // Last arg (for Dictionary it's value type)
+                if (args.Length > 0) {
+                    return args[args.Length - 1]; // Last arg (for Dictionary it's value type)
+                }
             }
             return typeof(object);
         }
 
         private static FieldInfo FindFieldInHierarchy(Type type, string fieldName) {
             var key = (type, fieldName);
-            if (FieldInfoCache.TryGetValue(key, out var cached)) return cached;
+            if (FieldInfoCache.TryGetValue(key, out var cached)) {
+                return cached;
+            }
 
             var current = type;
             while (current != null) {

@@ -112,10 +112,9 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Table", _styles.LabelStyle, _styles.LabelOptions);
 
-            var savedIndent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
+            GuiHelper.PushIndentLevel(0);
             var newCollectionIndex = EditorGUILayout.Popup(prevCollectionIndex, _collectionLabels, _styles.FlexibleContentOptions);
-            EditorGUI.indentLevel = savedIndent;
+            GuiHelper.PopIndentLevel();
 
             var newCollection = newCollectionIndex <= 0 ? default : _tableCollections[newCollectionIndex - 1];
             if (newCollectionIndex != prevCollectionIndex) {

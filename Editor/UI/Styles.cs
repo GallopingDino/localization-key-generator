@@ -1,4 +1,5 @@
 using System.Reflection;
+using Dino.LocalizationKeyGenerator.Editor.Utility;
 using UnityEditor;
 using UnityEngine;
 
@@ -100,7 +101,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         private void UpdateLayoutOptions() {
-            var isRepaintingSelf = Event.current.type == EventType.Repaint && EditorWindow.focusedWindow != null;
+            var isRepaintingSelf = Event.current.type == EventType.Repaint && GuiHelper.HasFocusedWindow();
             var isDragging = Event.current.type == EventType.DragUpdated;
 
             if (!isRepaintingSelf && !isDragging) {

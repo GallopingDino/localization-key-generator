@@ -41,8 +41,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             Update();
 
             _autoKeyUi.DrawModeSelector(out var mode);
-            BeginBox();
-            EditorGUI.indentLevel++;
+            GuiHelper.BeginBox();
 
             switch (mode) {
                 case AutoKeyUiMode.Auto:
@@ -58,8 +57,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                     _defaultDrawer?.Invoke(GUIContent.none);
                     break;
             }
-            EditorGUI.indentLevel--;
-            EndBox();
+            GuiHelper.EndBox();
         }
 
         private void Update() {
@@ -68,12 +66,5 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             _autoCommentUi?.Update();
         }
 
-        private void BeginBox() {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-        }
-
-        private void EndBox() {
-            EditorGUILayout.EndVertical();
-        }
     }
 }

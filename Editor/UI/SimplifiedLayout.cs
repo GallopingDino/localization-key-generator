@@ -1,6 +1,5 @@
 using System;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
-using UnityEditor;
 using UnityEngine;
 
 namespace Dino.LocalizationKeyGenerator.Editor.UI {
@@ -23,13 +22,11 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         public void Draw(GUIContent label) {
             Update();
 
-            BeginBox();
-            EditorGUI.indentLevel++;
+            GuiHelper.BeginBox();
             _defaultDrawer.Invoke(label);
             _autoCommentUi?.DrawErrors();
             _autoCommentUi?.DrawComment();
-            EditorGUI.indentLevel--;
-            EndBox();
+            GuiHelper.EndBox();
         }
 
         private void Update() {
@@ -37,12 +34,5 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             _autoCommentUi?.Update();
         }
 
-        private void BeginBox() {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-        }
-
-        private void EndBox() {
-            EditorGUILayout.EndVertical();
-        }
     }
 }
