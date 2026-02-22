@@ -3,7 +3,7 @@
 Localization Key Generator
 ===
 This package provides a set of attributes to generate localization keys and comments from code.
-It requires [Unity Localization](https://docs.unity3d.com/Packages/com.unity.localization@1.0/manual/Installation.html) and [Odin Inspector](https://odininspector.com/) to work.
+It requires [Unity Localization](https://docs.unity3d.com/Packages/com.unity.localization@1.0/manual/Installation.html). [Odin Inspector](https://odininspector.com/) is supported as an optional dependency — see [Odin Support](#odin-support).
 
 ## Setup
 ### Installation
@@ -76,17 +76,16 @@ A format string can contain both simple text pieces and resolvable strings enclo
 
 - Containing type member names, e. g. `{Character}`
 - [Parameter names](#passing-parameters), e. g. `{rootName}`
-- [Odin style expressions](https://odininspector.com/tutorials/value-and-action-resolvers/resolving-strings-to-stuff) starting with @, e. g. `{@{index} + 1}`
+- [Odin style expressions](https://odininspector.com/tutorials/value-and-action-resolvers/resolving-strings-to-stuff) starting with @, e. g. `{@{index} + 1}` (requires [Odin Inspector](#odin-support))
 
 
-
-Resolvable strings can be nested. For example, if you want your key index to start from 1, you can use `index` parameter inside of expression:
+Resolvable strings can be nested. For example, if you want your key index to start from 1, you can use `index` parameter inside of an Odin expression:
 
 
 ```c#
 public class Dialog : ScriptableObject {
     public List<Line> Lines;
-      
+
     [Serializable]
     public class Line {
 	public Character Character;
@@ -135,28 +134,28 @@ public class ItemLevel {
 
 Sometimes you might want to declare custom parameters in the code you don't have access to. Or you might want some of your classes and assemblies to not depend on Localization Key Generator assembly, but still be able to provide custom parameters. Or you might need to access `SerializedProperty` data in your parameters. In these cases parameter processors will come to the rescue.
 
-Parameter processors are used to declare custom parameters based on `InspectorProperties`, which are Odin's more powerful equivalent to `SerializedProperty`.
+Parameter processors are used to declare custom parameters based on `PropertyContext`, which wraps a `SerializedProperty` and provides reflection-based access to the underlying object hierarchy.
 
-Every time the format string is being resolved, all suitable parameter processors are applied to every `InspectorProperty` in hierarchy: from resolved `LocalizedString` field up to the root object.
+Every time the format string is being resolved, all suitable parameter processors are applied to every property in hierarchy: from resolved `LocalizedString` field up to the root object.
 
 To create a new parameter processor, inherit the base `ParameterProcessor` class. You can use one of the built-in processors such as `RootNameScriptableObjectProcessor`, `UuidScriptableObjectProcessor` and `ListIndexProcessor` as a reference:
 
 
 ```c#
-internal sealed class UuidScriptableObjectProcessor : ParameterProcessor {  
+internal sealed class UuidScriptableObjectProcessor : ParameterProcessor {
     public override string ParameterName => "uuid";
-        	    
-    public override bool CanProcess(InspectorProperty property) {  
-    	return property.ValueEntry?.WeakSmartValue is ScriptableObject;  
+
+    public override bool CanProcess(PropertyContext context) {
+    	return context.GetValue() is ScriptableObject;
     }
-    	    
-    public override object Process(InspectorProperty property) {  
-    	var scriptable = (ScriptableObject) property.ValueEntry.WeakSmartValue;  
-    	if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(scriptable, out var guid, out long _)) {  
-	    return guid;  
-	}  
+
+    public override object Process(PropertyContext context) {
+    	var scriptable = (ScriptableObject) context.GetValue();
+    	if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(scriptable, out var guid, out long _)) {
+	    return guid;
+	}
 	return string.Empty;
-    }  
+    }
 }
 ```
 
@@ -204,11 +203,16 @@ public class ItemLevel {
 
 You can achieve the same result by setting default case style format in `LocalizationKeyGeneratorSettings` using `Default Key / Comment String Format` fields. If by default you prefer to keep original case style, set these fields empty.
 
+## Odin Support
+
+[Odin Inspector](https://odininspector.com/) is supported as an optional dependency. When Odin is installed, add the `ODIN_SUPPORT` scripting define to your project's **Player Settings > Scripting Define Symbols** to enable:
+
+`@expressions` in format strings (e.g., `{@{index} + 1}`) are only available when Odin is installed, as they rely on Odin's [ValueResolver](https://odininspector.com/tutorials/value-and-action-resolvers/resolving-strings-to-stuff).
+
 ## Author
 Vladimir Kuznetsov
 
-[![](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/vladimir-kuznetsov-games/)[![](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/GallopingDino)
-
+[![](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/vladimir-kuznetsov-games/)
 
 ## License
 

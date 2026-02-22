@@ -1,13 +1,12 @@
 using System.Text.RegularExpressions;
 using Dino.LocalizationKeyGenerator.Editor.Settings;
-using Sirenix.OdinInspector.Editor;
 using UnityEngine.Localization.Tables;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
     internal class KeySolver {
         private const string IndexParameterName = "index";
         private const string DefaultIndexParameterPostfix = "-{index:D3}";
-        
+
         private readonly SolverImpl _solver = new SolverImpl();
         private readonly Regex _indexParameterFilter = new Regex(@"\{\s*index[\s\:\}]");
 
@@ -20,40 +19,40 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
             _solver.DefaultStringFormat = LocalizationKeyGeneratorSettings.Instance.DefaultKeyStringFormat;
         }
 
-        public bool TryCreateKey(InspectorProperty property, string format, out string key) {
-            return TryCreateKeyCore(property, format, sharedData: null, oldKey: null, out key);
+        public bool TryCreateKey(PropertyContext context, string format, out string key) {
+            return TryCreateKeyCore(context, format, sharedData: null, oldKey: null, out key);
         }
 
-        public bool TryCreateUniqueKey(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
-            return TryCreateKeyCore(property, format, sharedData, oldKey, out key);
+        public bool TryCreateUniqueKey(PropertyContext context, string format, SharedTableData sharedData, string oldKey, out string key) {
+            return TryCreateKeyCore(context, format, sharedData, oldKey, out key);
         }
 
-        public void CheckForErrors(InspectorProperty property, string format) {
-            TryCreateKeyCore(property, format, sharedData: null, oldKey: string.Empty, key: out _);
+        public void CheckForErrors(PropertyContext context, string format) {
+            TryCreateKeyCore(context, format, sharedData: null, oldKey: string.Empty, key: out _);
         }
 
         public string GetErrors() => _solver.GetErrors();
 
-        private bool TryCreateKeyCore(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
+        private bool TryCreateKeyCore(PropertyContext context, string format, SharedTableData sharedData, string oldKey, out string key) {
             key = null;
             _solver.ClearErrors();
 
-            if (_solver.TryResolveFormat(property, format, out var resolvedFormat) == false) {
+            if (_solver.TryResolveFormat(context, format, out var resolvedFormat) == false) {
                 return false;
             }
 
-            _solver.CollectParameters(property);
-            return TryBruteForceKeyIndex(property, resolvedFormat, sharedData, oldKey, out key);
+            _solver.CollectParameters(context);
+            return TryBruteForceKeyIndex(context, resolvedFormat, sharedData, oldKey, out key);
         }
 
-        private bool TryBruteForceKeyIndex(InspectorProperty property, string format, SharedTableData sharedData, string oldKey, out string key) {
+        private bool TryBruteForceKeyIndex(PropertyContext context, string format, SharedTableData sharedData, string oldKey, out string key) {
             var index = 0;
             do {
                 _solver.OverrideParameter(IndexParameterName, index);
                 if (index == 1) {
                     format = AppendFormatWithIndexIfNone(format);
                 }
-                if (_solver.TryResolveLine(property, format, out key) == false) {
+                if (_solver.TryResolveLine(context, format, out key) == false) {
                     return false;
                 }
                 index++;

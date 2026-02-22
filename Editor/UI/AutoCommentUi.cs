@@ -1,7 +1,6 @@
 using Dino.LocalizationKeyGenerator.Editor.Settings;
 using Dino.LocalizationKeyGenerator.Editor.Solvers;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
-using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Localization.Metadata;
@@ -9,16 +8,16 @@ using UnityEngine.Localization.Metadata;
 namespace Dino.LocalizationKeyGenerator.Editor.UI {
     internal class AutoCommentUi {
         private readonly CommentSolver _commentSolver;
-        private readonly InspectorProperty _property;
+        private readonly PropertyContext _context;
         private readonly AutoCommentAttribute _attribute;
         private readonly PropertyEditor _editor;
         private readonly Styles _styles;
 
         private long _settingsVersionOnPrevCommentSolverRun = -1;
 
-        public AutoCommentUi(InspectorProperty property, AutoCommentAttribute attr, PropertyEditor editor, Styles styles) {
+        public AutoCommentUi(PropertyContext context, AutoCommentAttribute attr, PropertyEditor editor, Styles styles) {
             _commentSolver = new CommentSolver();
-            _property = property;
+            _context = context;
             _attribute = attr;
             _editor = editor;
             _styles = styles;
@@ -39,7 +38,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             if (string.IsNullOrEmpty(_attribute.Format)) {
                 return;
             }
-            
+
             var sharedEntry = _editor.GetSharedEntry();
 
             if (sharedEntry == null) {
@@ -47,13 +46,13 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 SkipButtonControl();
                 return;
             }
-            
+
             var existingComment = _editor.GetComment();
             var hasComment = existingComment != null;
             var commentText = existingComment?.CommentText ?? "none";
-            
+
             EditorGUILayout.BeginHorizontal();
-            
+
             GUILayout.Label(new GUIContent($"Comment: {commentText}", tooltip: commentText), _styles.LabelStyle, _styles.LabelOptions);
 
             if (GUILayout.Button(hasComment ? "Regenerate" : "Generate", _styles.ButtonStyle, _styles.FlexibleContentOptions)) {
@@ -85,7 +84,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         private bool TryCreateComment(string commentFormat, out string comment) {
             _settingsVersionOnPrevCommentSolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            return _commentSolver.TryCreateComment(_property, commentFormat, out comment);
+            return _commentSolver.TryCreateComment(_context, commentFormat, out comment);
         }
 
         private void CheckForErrors() {
@@ -93,7 +92,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 return;
 
             _settingsVersionOnPrevCommentSolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            _commentSolver.CheckForErrors(_property, _attribute.Format);
+            _commentSolver.CheckForErrors(_context, _attribute.Format);
         }
 
         private void SkipButtonControl() {

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,7 +17,9 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         public GUILayoutOption[] ContentSizeFitterOptions { private set; get; }
         public GUILayoutOption[] TextOptions { private set; get; }
         public GUIContent EditTableButton { private set; get; }
-        
+
+        private float _lastKnownWidth;
+
         #region Initialization
 
         public Styles() {
@@ -28,18 +29,18 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         private void InitializeStyles() {
             ButtonStyle = new GUIStyle(EditorStyles.miniButton) {
-                font = EditorStyles.miniFont, 
+                font = EditorStyles.miniFont,
                 richText = true
             };
 
             ErrorStyle = new GUIStyle(EditorStyles.helpBox) {
                 richText = true
             };
-            
+
             LabelStyle = new GUIStyle(EditorStyles.label) {
                 alignment = TextAnchor.MiddleLeft
             };
-            
+
             TextStyle = new GUIStyle(EditorStyles.textArea) {
                 wordWrap = true,
                 padding = {
@@ -66,14 +67,13 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
 
             var iconsType = Assembly.Load("Unity.Localization.Editor")?.GetType("UnityEditor.Localization.EditorIcons");
-            
-            // Depends on localization package version
+
             EditTableButton = iconsType?.GetProperty("StringTable", BindingFlags.Static | BindingFlags.Public)?
                                     .GetValue(null) as GUIContent;
-            
+
             EditTableButton = EditTableButton ?? new GUIContent(iconsType?.GetProperty("TableWindow", BindingFlags.Static | BindingFlags.Public)?
                               .GetValue(null) as Texture, "Open table");
-            
+
             EditTableButton = EditTableButton ?? new GUIContent("T", "Open table");
 
             WarningIcon = typeof(EditorGUIUtility)
@@ -84,15 +84,15 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private void InitializeLayoutOptions() {
             const float SquareButtonWidth = 30;
             LabelOptions = new[] { GUILayout.Width(100), GUILayout.ExpandWidth(true) };
-            TextOptions = new[] { GUILayout.ExpandHeight(true), GUILayout.MaxHeight(200) };            
+            TextOptions = new[] { GUILayout.ExpandHeight(true), GUILayout.MaxHeight(200) };
             ContentSizeFitterOptions = new [] { GUILayout.MinHeight(10) };
 
             FlexibleContentOptions = new[] { GUILayout.ExpandWidth(true), GUILayout.MaxWidth(int.MaxValue), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
             SquareContentOptions = new[] { GUILayout.Width(SquareButtonWidth), GUILayout.ExpandWidth(false), GUILayout.Height(EditorGUIUtility.singleLineHeight) };
         }
-        
+
         #endregion
-        
+
         #region Update
 
         public void Update() {
@@ -100,7 +100,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         private void UpdateLayoutOptions() {
-            var isRepaintingSelf = Event.current.type == EventType.Repaint && GUIHelper.CurrentWindowHasFocus;
+            var isRepaintingSelf = Event.current.type == EventType.Repaint && EditorWindow.focusedWindow != null;
             var isDragging = Event.current.type == EventType.DragUpdated;
 
             if (!isRepaintingSelf && !isDragging) {
@@ -110,10 +110,16 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             const float LabelContentRatio = 0.35f;
             const float MinLabelWidth = 30;
 
-            var positionWidth = GUIHelper.GetCurrentLayoutRect().width;
+            var positionWidth = _lastKnownWidth;
             var labelWidth = Mathf.Max(MinLabelWidth, positionWidth * LabelContentRatio);
 
             LabelOptions[0] = GUILayout.Width(labelWidth);
+        }
+
+        public void TrackWidth(Rect position) {
+            if (position.width > 0) {
+                _lastKnownWidth = position.width;
+            }
         }
 
         #endregion

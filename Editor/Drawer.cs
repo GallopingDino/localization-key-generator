@@ -1,42 +1,66 @@
+using System.Collections.Generic;
 using Dino.LocalizationKeyGenerator.Editor.UI;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
-using Sirenix.OdinInspector.Editor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Localization;
 
 namespace Dino.LocalizationKeyGenerator.Editor {
-    [DrawerPriority(DrawerPriorityLevel.WrapperPriority)]
-    internal class Drawer : OdinDrawer {
-        private ILayout _layout;
+    [CustomPropertyDrawer(typeof(AutoKeyAttribute))]
+    [CustomPropertyDrawer(typeof(AutoCommentAttribute))]
+    internal class Drawer : PropertyDrawer {
+        private class DrawerState {
+            public ILayout Layout;
+        }
 
-        protected override void Initialize() {
-            var keyAttr = GetAutoKeyAttribute(Property);
-            var commentAttr = GetAutoCommentAttribute(Property);
-            var editor = new PropertyEditor(Property);
+        private readonly Dictionary<string, DrawerState> _states = new Dictionary<string, DrawerState>();
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
+            return 0f;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
+            if (fieldInfo != null && fieldInfo.FieldType != typeof(LocalizedString)) {
+                EditorGUI.PropertyField(position, property, label, true);
+                return;
+            }
+
+            var state = GetOrCreateState(property);
+            state.Layout.Draw(label);
+        }
+
+        private DrawerState GetOrCreateState(SerializedProperty property) {
+            var key = property.serializedObject.targetObject.GetInstanceID() + ":" + property.propertyPath;
+
+            if (_states.TryGetValue(key, out var state)) {
+                return state;
+            }
+
+            state = new DrawerState();
+            var context = new PropertyContext(property);
+            var keyAttr = GetAutoKeyAttribute(context);
+            var commentAttr = GetAutoCommentAttribute(context);
+            var editor = new PropertyEditor(context);
             var styles = new Styles();
-            _layout = keyAttr != null ? (ILayout) new FullLayout(Property, keyAttr, commentAttr, editor, styles, DrawDefaultInspector)
-                                      : new SimplifiedLayout(Property, commentAttr, editor, styles, DrawDefaultInspector);
+
+            state.Layout = keyAttr != null
+                ? (ILayout) new FullLayout(context, keyAttr, commentAttr, editor, styles, l => DrawDefaultProperty(property, l))
+                : new SimplifiedLayout(context, commentAttr, editor, styles, l => DrawDefaultProperty(property, l));
+
+            _states[key] = state;
+            return state;
         }
 
-        public override bool CanDrawProperty(InspectorProperty property) {
-            return property.ValueEntry?.TypeOfValue == typeof(LocalizedString) 
-                   && (GetAutoKeyAttribute(property) != null || GetAutoCommentAttribute(property) != null);
+        private void DrawDefaultProperty(SerializedProperty property, GUIContent label) {
+            EditorGUILayout.PropertyField(property, label, true);
         }
 
-        protected override void DrawPropertyLayout(GUIContent label) {
-            _layout.Draw(label);
+        private AutoKeyAttribute GetAutoKeyAttribute(PropertyContext context) {
+            return context.GetAttribute<AutoKeyAttribute>() ?? attribute as AutoKeyAttribute;
         }
 
-        private void DrawDefaultInspector(GUIContent label) {
-            CallNextDrawer(label);
-        }
-
-        private static AutoKeyAttribute GetAutoKeyAttribute(InspectorProperty property) {
-            return property.GetAttribute<AutoKeyAttribute>() ?? property.Parent?.GetAttribute<AutoKeyAttribute>();
-        }
-
-        private static AutoCommentAttribute GetAutoCommentAttribute(InspectorProperty property) {
-            return property.GetAttribute<AutoCommentAttribute>() ?? property.Parent?.GetAttribute<AutoCommentAttribute>();
+        private AutoCommentAttribute GetAutoCommentAttribute(PropertyContext context) {
+            return context.GetAttribute<AutoCommentAttribute>() ?? attribute as AutoCommentAttribute;
         }
     }
 }

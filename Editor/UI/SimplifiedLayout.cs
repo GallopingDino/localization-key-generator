@@ -1,7 +1,6 @@
 using System;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities.Editor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Dino.LocalizationKeyGenerator.Editor.UI {
@@ -9,21 +8,21 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private readonly Action<GUIContent> _defaultDrawer;
         private readonly Styles _styles;
         private readonly AutoCommentUi _autoCommentUi;
-        
-        public SimplifiedLayout(InspectorProperty property, AutoCommentAttribute comment, 
+
+        public SimplifiedLayout(PropertyContext context, AutoCommentAttribute comment,
                                              PropertyEditor editor, Styles styles, Action<GUIContent> defaultDrawer) {
             _defaultDrawer = defaultDrawer;
             _styles = styles;
 
             if (comment != null) {
-                _autoCommentUi = new AutoCommentUi(property, comment, editor, styles);
+                _autoCommentUi = new AutoCommentUi(context, comment, editor, styles);
                 editor.EntryAdded += _autoCommentUi.GenerateComment;
             }
         }
-        
+
         public void Draw(GUIContent label) {
             Update();
-            
+
             BeginBox();
             _defaultDrawer.Invoke(label);
             _autoCommentUi?.DrawErrors();
@@ -37,11 +36,11 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         private void BeginBox() {
-            SirenixEditorGUI.BeginBox();
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         }
 
         private void EndBox() {
-            SirenixEditorGUI.EndBox();
+            EditorGUILayout.EndVertical();
         }
     }
 }

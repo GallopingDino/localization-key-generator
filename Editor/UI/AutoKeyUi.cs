@@ -5,8 +5,6 @@ using System.Linq;
 using Dino.LocalizationKeyGenerator.Editor.Settings;
 using Dino.LocalizationKeyGenerator.Editor.Solvers;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEditor.Localization.UI;
@@ -21,7 +19,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private static string[] _tabLabels;
 
         private readonly KeySolver _keySolver;
-        private readonly InspectorProperty _property;
+        private readonly PropertyContext _context;
         private readonly AutoKeyAttribute _attribute;
         private readonly Styles _styles;
         private readonly PropertyEditor _editor;
@@ -33,9 +31,9 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         #region Initialization
 
-        public AutoKeyUi(InspectorProperty property, AutoKeyAttribute attr, PropertyEditor editor, Styles styles) {
+        public AutoKeyUi(PropertyContext context, AutoKeyAttribute attr, PropertyEditor editor, Styles styles) {
             _keySolver = new KeySolver();
-            _property = property;
+            _context = context;
             _attribute = attr;
             _editor = editor;
             _styles = styles;
@@ -63,18 +61,18 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         }
 
         #endregion
-        
+
         #region Draw
 
         public void DrawModeSelector(out AutoKeyUiMode mode) {
-            BeginIndentedGroup();
+            EditorGUILayout.BeginVertical();
 
             var selectedTab = (int) _mode;
             selectedTab = GUILayout.Toolbar(selectedTab, _tabLabels, EditorStyles.miniButton);
             _mode = (AutoKeyUiMode) selectedTab;
             mode = _mode;
 
-            EndIndentedGroup();
+            EditorGUILayout.EndVertical();
         }
 
         public void DrawErrors() {
@@ -91,12 +89,12 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
 
         public void DrawText() {
             var sharedEntry = _editor.GetSharedEntry();
-            
+
             foreach (var locale in LocalizationKeyGeneratorSettings.Instance.PreviewLocales) {
                 if (locale == default || _editor.IsLocalizationTableAvailable(locale) == false) {
                     continue;
                 }
-                
+
                 DrawLocale(locale, ref sharedEntry);
             }
         }
@@ -113,11 +111,12 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Table", _styles.LabelStyle, _styles.LabelOptions);
-            
-            BeginIgnoreIndent();
+
+            var savedIndent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
             var newCollectionIndex = EditorGUILayout.Popup(prevCollectionIndex, _collectionLabels, _styles.FlexibleContentOptions);
-            EndIgnoreIndent();
-            
+            EditorGUI.indentLevel = savedIndent;
+
             var newCollection = newCollectionIndex <= 0 ? default : _tableCollections[newCollectionIndex - 1];
             if (newCollectionIndex != prevCollectionIndex) {
                 _editor.SetTableCollection(newCollection);
@@ -174,12 +173,12 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                         _editor.CreateSharedEntry(key);
                         _editor.CopySharedEntryValuesFrom(sharedEntry);
                     }
-                    
+
                     GUIUtility.hotControl = 0;
                     GUIUtility.keyboardControl = 0;
                     GUIUtility.ExitGUI();
                 }
-                
+
                 if (GUILayout.Button(new GUIContent("○", "Set reference empty"), _styles.SquareContentOptions)) {
                     _editor.SetSharedEntryReferenceEmpty();
                     GUIUtility.hotControl = 0;
@@ -246,16 +245,16 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             }
 
             _editor.SetLocalizationTableEntryValue(entry, newText);
-            
+
             GUIUtility.ExitGUI();
         }
 
         private string GetTextControlName(LocaleIdentifier locale) {
-            return $"{TextControlNamePrefix}@{_property.Path}-{locale.Code}";
+            return $"{TextControlNamePrefix}@{_context.Path}-{locale.Code}";
         }
 
         #endregion
-        
+
         #region Update
 
         public void Update() {
@@ -267,16 +266,16 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 return;
 
             _settingsVersionOnPrevKeySolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            _keySolver.CheckForErrors(_property, _attribute.Format);
+            _keySolver.CheckForErrors(_context, _attribute.Format);
         }
-        
+
         #endregion
-        
+
         #region Localization tools
 
         private bool TryCreateLocalizationKey(string keyFormat, out string key) {
             _settingsVersionOnPrevKeySolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            return _keySolver.TryCreateKey(_property, keyFormat, out key);
+            return _keySolver.TryCreateKey(_context, keyFormat, out key);
         }
 
         private bool TryCreateUniqueLocalizationKey(SharedTableData sharedData, string keyFormat, string oldKey, out string key) {
@@ -284,9 +283,9 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                 key = null;
                 return false;
             }
-            
+
             _settingsVersionOnPrevKeySolverRun = LocalizationKeyGeneratorSettings.Instance.Version;
-            return _keySolver.TryCreateUniqueKey(_property, keyFormat, sharedData, oldKey, out key);
+            return _keySolver.TryCreateUniqueKey(_context, keyFormat, sharedData, oldKey, out key);
         }
 
         #endregion
@@ -297,14 +296,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             GUI.Button(new Rect(), GUIContent.none);
         }
 
-        private void BeginIndentedGroup() {
-            SirenixEditorGUI.BeginIndentedVertical();
-        }
-
-        private void EndIndentedGroup() {
-            SirenixEditorGUI.EndIndentedVertical();
-        }
-        
         private void BeginVerticalContentSizeFitter() {
             GUILayout.BeginVertical(_styles.ContentSizeFitterOptions);
         }
@@ -313,15 +304,6 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             GUILayout.EndVertical();
         }
 
-        private void BeginIgnoreIndent() {
-            GUIHelper.PushIndentLevel(EditorGUI.indentLevel);
-            EditorGUI.indentLevel = 0;
-        }
-
-        private void EndIgnoreIndent() {
-            GUIHelper.PopIndentLevel();
-        }
-        
         #endregion
     }
 }

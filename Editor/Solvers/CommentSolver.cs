@@ -1,5 +1,4 @@
 using Dino.LocalizationKeyGenerator.Editor.Settings;
-using Sirenix.OdinInspector.Editor;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
     internal class CommentSolver {
@@ -13,20 +12,20 @@ namespace Dino.LocalizationKeyGenerator.Editor.Solvers {
         private void UpdateSolverSettings() {
             _solver.DefaultStringFormat = LocalizationKeyGeneratorSettings.Instance.DefaultCommentStringFormat;
         }
-        
-        public bool TryCreateComment(InspectorProperty property, string format, out string comment) {
+
+        public bool TryCreateComment(PropertyContext context, string format, out string comment) {
             comment = null;
             _solver.ClearErrors();
 
-            if (_solver.TryResolveFormat(property, format, out var resolvedFormat) == false) {
+            if (_solver.TryResolveFormat(context, format, out var resolvedFormat) == false) {
                 return false;
             }
 
-            _solver.CollectParameters(property);
-            return _solver.TryResolveLine(property, resolvedFormat, out comment);
+            _solver.CollectParameters(context);
+            return _solver.TryResolveLine(context, resolvedFormat, out comment);
         }
-        
-        public void CheckForErrors(InspectorProperty property, string format) => TryCreateComment(property, format, comment: out _);
+
+        public void CheckForErrors(PropertyContext context, string format) => TryCreateComment(context, format, comment: out _);
 
         public string GetErrors() => _solver.GetErrors();
     }

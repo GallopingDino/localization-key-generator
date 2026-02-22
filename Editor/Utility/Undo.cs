@@ -1,4 +1,3 @@
-using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine;
@@ -6,14 +5,14 @@ using UnityEngine.Localization.Tables;
 
 namespace Dino.LocalizationKeyGenerator.Editor.Utility {
     internal class Undo {
-        private readonly InspectorProperty _property;
+        private readonly PropertyContext _context;
 
-        public Undo(InspectorProperty property) {
-            _property = property;
+        public Undo(PropertyContext context) {
+            _context = context;
         }
 
         public void RegisterSelfChanges(string desc) {
-            if (_property.SerializationRoot.ValueEntry.WeakSmartValue is Object root) {
+            if (_context.RootObject is Object root) {
                 UnityEditor.Undo.RecordObject(root, desc);
                 TriggerDefaultDrawerUpdate();
             }
@@ -43,7 +42,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
 
         public void RegisterCollectionChanges(StringTableCollection collection, string desc) {
             if (collection == null) return;
-            
+
             var objects = new Object[collection.Tables.Count + 1];
             for (var i = 0; i < collection.Tables.Count; ++i) {
                 objects[i] = collection.Tables[i].asset;
@@ -59,8 +58,8 @@ namespace Dino.LocalizationKeyGenerator.Editor.Utility {
         }
 
         private void TriggerDefaultDrawerUpdate() {
-            if (_property.SerializationRoot.ValueEntry.WeakSmartValue is Object root) {
-                EditorUtility.SetDirty(root); // This is the only way to trigger LocalizedStringPropertyDrawer update
+            if (_context.RootObject is Object root) {
+                EditorUtility.SetDirty(root);
             }
         }
     }
