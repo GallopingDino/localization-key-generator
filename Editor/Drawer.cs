@@ -43,19 +43,16 @@ namespace Dino.LocalizationKeyGenerator.Editor {
             var keyAttr = GetAutoKeyAttribute(context);
             var commentAttr = GetAutoCommentAttribute(context);
             var editor = new PropertyEditor(context);
+            var defaultDrawer = new UnityDrawerProxy(property, fieldInfo);
             var styles = new Styles();
 
             state.Styles = styles;
             state.Layout = keyAttr != null
-                ? (ILayout) new FullLayout(context, keyAttr, commentAttr, editor, styles, l => DrawDefaultProperty(property, l))
-                : new SimplifiedLayout(context, commentAttr, editor, styles, l => DrawDefaultProperty(property, l));
+                ? (ILayout) new FullLayout(context, keyAttr, commentAttr, editor, styles, defaultDrawer)
+                : new SimplifiedLayout(context, commentAttr, editor, styles, defaultDrawer);
 
             _states[key] = state;
             return state;
-        }
-
-        private void DrawDefaultProperty(SerializedProperty property, GUIContent label) {
-            EditorGUILayout.PropertyField(property, label, true);
         }
 
         private AutoKeyAttribute GetAutoKeyAttribute(PropertyContext context) {

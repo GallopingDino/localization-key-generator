@@ -1,15 +1,14 @@
-using System;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
 using UnityEngine;
 
 namespace Dino.LocalizationKeyGenerator.Editor.UI {
     internal class SimplifiedLayout : ILayout {
-        private readonly Action<GUIContent> _defaultDrawer;
+        private readonly UnityDrawerProxy _defaultDrawer;
         private readonly Styles _styles;
         private readonly AutoCommentUi _autoCommentUi;
 
         public SimplifiedLayout(PropertyContext context, AutoCommentAttribute comment,
-                                             PropertyEditor editor, Styles styles, Action<GUIContent> defaultDrawer) {
+                                             PropertyEditor editor, Styles styles, UnityDrawerProxy defaultDrawer) {
             _defaultDrawer = defaultDrawer;
             _styles = styles;
 
@@ -23,7 +22,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
             Update();
 
             GuiHelper.BeginBox();
-            _defaultDrawer.Invoke(label);
+            _defaultDrawer.Draw(label);
             _autoCommentUi?.DrawErrors();
             _autoCommentUi?.DrawComment();
             GuiHelper.EndBox();

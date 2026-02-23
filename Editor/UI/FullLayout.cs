@@ -1,11 +1,10 @@
-using System;
 using Dino.LocalizationKeyGenerator.Editor.Utility;
 using UnityEditor;
 using UnityEngine;
 
 namespace Dino.LocalizationKeyGenerator.Editor.UI {
     internal class FullLayout : ILayout {
-        private readonly Action<GUIContent> _defaultDrawer;
+        private readonly UnityDrawerProxy _defaultDrawer;
         private readonly Styles _styles;
         private readonly AutoKeyUi _autoKeyUi;
         private readonly AutoCommentUi _autoCommentUi;
@@ -13,7 +12,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
         private bool _expanded = true;
 
         public FullLayout(PropertyContext context, AutoKeyAttribute key, AutoCommentAttribute comment,
-                                       PropertyEditor editor, Styles styles, Action<GUIContent> defaultDrawer) {
+                                       PropertyEditor editor, Styles styles, UnityDrawerProxy defaultDrawer) {
             _defaultDrawer = defaultDrawer;
             _styles = styles;
 
@@ -54,7 +53,7 @@ namespace Dino.LocalizationKeyGenerator.Editor.UI {
                     _autoKeyUi.DrawText();
                     break;
                 case AutoKeyUiMode.Manual:
-                    _defaultDrawer?.Invoke(GUIContent.none);
+                    _defaultDrawer.Draw(GUIContent.none);
                     break;
             }
             GuiHelper.EndBox();
